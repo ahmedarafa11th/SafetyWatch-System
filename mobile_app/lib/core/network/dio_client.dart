@@ -34,6 +34,119 @@ class DioClient {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          // ==========================================
+          // DEBUG: Test Account Bypass Interceptor
+          // ==========================================
+          if (token == 'mock_test_token_999') {
+            await Future.delayed(const Duration(milliseconds: 400)); // Simulate latency
+            
+            dynamic fakeData = {};
+            
+            if (options.path.contains('dashboard')) {
+              fakeData = {
+                'stats': {
+                  'total_employees': 42,
+                  'active_employees': 38,
+                  'cameras_online': 12,
+                  'cameras_offline': 1,
+                  'unresolved_alerts': 3,
+                },
+                'recent_attendance': [
+                  {
+                    'id': 1,
+                    'employee': {'id': 1, 'name': 'John Doe'},
+                    'camera': {'id': 1, 'name': 'Main Entrance'},
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'type': 'check_in',
+                  }
+                ],
+                'recent_alerts': [
+                  {
+                    'id': 1,
+                    'camera': {'id': 1, 'name': 'Warehouse Cam 1'},
+                    'type': 'person_down',
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'is_resolved': false,
+                    'confidence': 0.95
+                  }
+                ]
+              };
+            } else if (options.path.contains('employee/attendance')) {
+              fakeData = {
+                'stats': {
+                  'days_present': 18,
+                  'days_absent': 1,
+                  'days_late': 2,
+                },
+                'records': [
+                  {
+                    'id': 1,
+                    'employee': {'id': 999, 'name': 'Test Employee'},
+                    'camera': {'id': 1, 'name': 'Main Entrance'},
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'type': 'check_in',
+                  }
+                ]
+              };
+            } else if (options.path.contains('employees')) {
+              fakeData = [
+                {
+                  'id': 999,
+                  'name': 'Test Employee',
+                  'email': 'employee@test.com',
+                  'department': 'Engineering',
+                  'position': 'Developer',
+                  'status': 'active',
+                }
+              ];
+            } else if (options.path.contains('cameras')) {
+              fakeData = [
+                {
+                  'id': 1,
+                  'name': 'Main Entrance',
+                  'location': 'Lobby',
+                  'ip_address': '192.168.1.10',
+                  'is_online': true,
+                  'status': 'online'
+                }
+              ];
+            } else if (options.path.contains('attendance')) {
+              fakeData = {
+                'data': [
+                  {
+                    'id': 1,
+                    'employee': {'id': 999, 'name': 'Test Employee'},
+                    'camera': {'id': 1, 'name': 'Main Entrance'},
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'type': 'check_in',
+                  }
+                ]
+              };
+            } else if (options.path.contains('violations')) {
+              fakeData = {
+                'data': [
+                  {
+                    'id': 1,
+                    'employee': {'id': 999, 'name': 'Test Employee'},
+                    'camera': {'id': 1, 'name': 'Warehouse Cam'},
+                    'type': 'no_helmet',
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'is_resolved': false,
+                  }
+                ]
+              };
+            }
+            
+            return handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {'data': fakeData},
+              )
+            );
+          }
+          // ==========================================
+
           return handler.next(options);
         },
         onResponse: (response, handler) {

@@ -63,7 +63,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 4),
               // Login button
               OutlinedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/login'),
+                onPressed: () => Navigator.pushNamed(context, 'login'),
                 icon: Icon(Icons.login, size: 12,
                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                 label: Text(
@@ -91,7 +91,7 @@ class HomeScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/signup'),
+                  onPressed: () => Navigator.pushNamed(context, 'signup'),
                   icon: const Icon(Icons.person_add_outlined, size: 11),
                   label: const Text(
                     'Sign Up',
@@ -121,7 +121,7 @@ class HomeScreen extends StatelessWidget {
                   secondaryText: isDark
                       ? const Color(0xFF94A3B8)
                       : const Color(0xFF64748B),
-                  onGetStarted: () => Navigator.pushNamed(context, '/signup'),
+                  onGetStarted: () => Navigator.pushNamed(context, 'signup'),
                   onWatchDemo: () {},
                 ),
                 ProblemSolutionSection(isDark: isDark),

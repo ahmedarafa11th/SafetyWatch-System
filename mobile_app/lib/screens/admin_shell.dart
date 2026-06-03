@@ -1,63 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_colors.dart';
+import '../providers/auth_provider.dart';
 import 'admin/admin_dashboard.dart';
 import 'admin/employees_page.dart';
 import 'admin/admin_attendance.dart';
-import 'admin/violations_screen.dart';
 import 'admin/alerts_screen.dart';
 import 'admin/camera_management.dart';
 
-class AdminShell extends StatefulWidget {
+class AdminShell extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
   const AdminShell({super.key, required this.onToggleTheme});
 
   @override
-  State<AdminShell> createState() => _AdminShellState();
+  ConsumerState<AdminShell> createState() => _AdminShellState();
 }
 
-class _AdminShellState extends State<AdminShell> {
+class _AdminShellState extends ConsumerState<AdminShell> {
   int _currentIndex = 0;
 
+  // 5 tabs: Dashboard, Employees, Attendance, Alerts (merged with Violations), Cameras
   final List<String> _titles = [
     'Dashboard',
     'Employees',
     'Attendance',
-    'Violations',
     'Alerts',
     'Cameras',
   ];
 
-  final List<IconData> _icons = [
-    Icons.dashboard,
-    Icons.people,
-    Icons.calendar_today,
-    Icons.gavel,
-    Icons.warning_amber,
-    Icons.videocam,
+  final List<NavigationDestination> _destinations = const [
+    NavigationDestination(
+      icon: Icon(Icons.dashboard_outlined),
+      selectedIcon: Icon(Icons.dashboard),
+      label: 'Dashboard',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.people_outline),
+      selectedIcon: Icon(Icons.people),
+      label: 'Employees',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.calendar_today_outlined),
+      selectedIcon: Icon(Icons.calendar_today),
+      label: 'Attendance',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.warning_amber_outlined),
+      selectedIcon: Icon(Icons.warning_amber),
+      label: 'Alerts',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.videocam_outlined),
+      selectedIcon: Icon(Icons.videocam),
+      label: 'Cameras',
+    ),
   ];
+
+  Future<void> _logout() async {
+    await ref.read(authProvider.notifier).logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, 'login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.name ?? 'Admin';
 
     final pages = [
       const AdminDashboardScreen(),
       const EmployeesPageScreen(),
       const AdminAttendanceScreen(),
-      const ViolationsScreenPage(),
-      const AlertsScreenPage(),
+      const AlertsScreen(),
       const CameraManagementScreen(),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("SafetyWatch"),
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
+        title: Text(_titles[_currentIndex]),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 20),
@@ -66,15 +90,16 @@ class _AdminShellState extends State<AdminShell> {
           PopupMenuButton<String>(
             offset: const Offset(0, 45),
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 enabled: false,
-                child: Text("Welcome, Admin User", style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text("Welcome, $userName",
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'logout', child: Text("Logout")),
             ],
             onSelected: (v) {
-              if (v == 'logout') Navigator.pushReplacementNamed(context, '/');
+              if (v == 'logout') _logout();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -83,7 +108,13 @@ class _AdminShellState extends State<AdminShell> {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: AppColors.primary.withAlpha(30),
-                    child: const Icon(Icons.person, size: 16, color: AppColors.primary),
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'A',
+                      style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12),
+                    ),
                   ),
                   const SizedBox(width: 6),
                   const Icon(Icons.arrow_drop_down, size: 18),
@@ -93,71 +124,28 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
-      drawer: Drawer(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                width: double.infinity,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.visibility,
-                      size: 32,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text("SafetyWatch", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text("Admin Panel", style: TextStyle(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      fontSize: 13,
-                    )),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-
-              // Nav items
-              ...List.generate(_titles.length, (i) => ListTile(
-                leading: Icon(
-                  _icons[i],
-                  color: _currentIndex == i ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                  size: 22,
-                ),
-                title: Text(
-                  _titles[i],
-                  style: TextStyle(
-                    fontWeight: _currentIndex == i ? FontWeight.w600 : FontWeight.normal,
-                    color: _currentIndex == i ? AppColors.primary : null,
-                  ),
-                ),
-                selected: _currentIndex == i,
-                selectedTileColor: AppColors.primary.withAlpha(15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                onTap: () {
-                  setState(() => _currentIndex = i);
-                  Navigator.pop(context);
-                },
-              )),
-
-              const Spacer(),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.error, size: 22),
-                title: const Text("Logout", style: TextStyle(color: AppColors.error)),
-                onTap: () => Navigator.pushReplacementNamed(context, '/'),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: pages[_currentIndex],
       ),
-      body: IndexedStack(index: _currentIndex, children: pages),
+      // M3 NavigationBar with 5 tabs
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) {
+          HapticFeedback.lightImpact();
+          setState(() => _currentIndex = i);
+        },
+        destinations: _destinations,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      ),
     );
   }
 }

@@ -12,6 +12,7 @@ class SecureStorageService {
 
   static const String _tokenKey = 'auth_token';
   static const String _userRoleKey = 'user_role';
+  static const String _userDataKey = 'user_data';
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
@@ -33,7 +34,16 @@ class SecureStorageService {
     return await _storage.read(key: _userRoleKey);
   }
 
+  Future<void> saveUserData(String jsonString) async {
+    await _storage.write(key: _userDataKey, value: jsonString);
+  }
+
+  Future<String?> getUserData() async {
+    return await _storage.read(key: _userDataKey);
+  }
+
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
 }
+

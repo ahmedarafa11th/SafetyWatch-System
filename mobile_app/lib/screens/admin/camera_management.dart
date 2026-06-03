@@ -1,47 +1,183 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/stat_card.dart';
+import '../../widgets/loading_shimmer.dart';
+import '../../providers/cameras_provider.dart';
+import '../../models/camera.dart';
 
-class CameraManagementScreen extends StatefulWidget {
+class CameraManagementScreen extends ConsumerStatefulWidget {
   const CameraManagementScreen({super.key});
 
   @override
-  State<CameraManagementScreen> createState() => _CameraManagementScreenState();
+  ConsumerState<CameraManagementScreen> createState() =>
+      _CameraManagementScreenState();
 }
 
-class _CameraManagementScreenState extends State<CameraManagementScreen> {
-  final List<Map<String, dynamic>> _cameras = [
-    {"name": "Camera 1 - Main Entrance", "loc": "Building A - Entrance", "status": "live", "time": "Active now", "alerts": 12},
-    {"name": "Camera 2 - Office Floor", "loc": "Building A - Floor 2", "status": "live", "time": "Active now", "alerts": 5},
-    {"name": "Camera 3 - Warehouse", "loc": "Building B - Warehouse", "status": "live", "time": "Active now", "alerts": 8},
-    {"name": "Camera 4 - Storage", "loc": "Building B - Storage", "status": "live", "time": "Active now", "alerts": 2},
-    {"name": "Camera 5 - Production Area", "loc": "Building C - Production", "status": "offline", "time": "2 hours ago", "alerts": 0},
-    {"name": "Camera 6 - Lobby", "loc": "Building A - Lobby", "status": "live", "time": "Active now", "alerts": 3},
-    {"name": "Camera 7 - Parking Lot", "loc": "Outdoor - Parking", "status": "live", "time": "Active now", "alerts": 15},
-    {"name": "Camera 8 - Server Room", "loc": "Building A - Floor 3", "status": "live", "time": "Active now", "alerts": 4},
-    {"name": "Camera 9 - Cafeteria", "loc": "Building A - Floor 1", "status": "live", "time": "Active now", "alerts": 1},
-    {"name": "Camera 10 - Loading Dock", "loc": "Building B - Dock", "status": "live", "time": "Active now", "alerts": 6},
-    {"name": "Camera 11 - Emergency Exit", "loc": "Building C - Exit", "status": "live", "time": "Active now", "alerts": 0},
-    {"name": "Camera 12 - Reception", "loc": "Building A - Reception", "status": "live", "time": "Active now", "alerts": 7},
-  ];
-
-  void _deleteCamera(int index) {
-    setState(() {
-      _cameras.removeAt(index);
-    });
+class _CameraManagementScreenState
+    extends ConsumerState<CameraManagementScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(camerasProvider.notifier).fetch());
   }
 
-  void _showCameraSettings(BuildContext context, Map<String, dynamic> cam, int index) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLive = cam["status"] == "live";
-    final labelColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  void _showAddDialog() {
+    final form = CameraFormData();
+    _showCameraFormDialog(form: form, isEdit: false);
+  }
 
+  void _showEditDialog(Camera cam) {
+    final form = CameraFormData.fromCamera(cam);
+    _showCameraFormDialog(form: form, isEdit: true, cameraId: cam.id);
+  }
+
+  void _showCameraFormDialog({
+    required CameraFormData form,
+    required bool isEdit,
+    int? cameraId,
+  }) {
+    final nameC = TextEditingController(text: form.name);
+    final locC = TextEditingController(text: form.location);
+    final ipC = TextEditingController(text: form.ipAddress);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isSaving = ref.watch(camerasProvider).isSaving;
+          return AlertDialog(
+            title: Text(isEdit ? "Edit Camera" : "Add New Camera"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameC,
+                    decoration: const InputDecoration(
+                      labelText: "Camera Name *",
+                      hintText: "e.g. Main Entrance Cam",
+                    ),
+                    onChanged: (v) => form.name = v,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: locC,
+                    decoration: const InputDecoration(
+                      labelText: "Location *",
+                      hintText: "e.g. Building A - Entrance",
+                    ),
+                    onChanged: (v) => form.location = v,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ipC,
+                    decoration: const InputDecoration(
+                      labelText: "IP Address / Stream URL",
+                      hintText: "e.g. 192.168.1.100 or rtsp://...",
+                    ),
+                    onChanged: (v) => form.ipAddress = v,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: form.status,
+                    decoration: const InputDecoration(labelText: "Status"),
+                    items: const [
+                      DropdownMenuItem(
+                          value: "online", child: Text("Online")),
+                      DropdownMenuItem(
+                          value: "offline", child: Text("Offline")),
+                    ],
+                    onChanged: (v) =>
+                        setDialogState(() => form.status = v!),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        form.name = nameC.text;
+                        form.location = locC.text;
+                        form.ipAddress = ipC.text;
+
+                        bool success;
+                        if (isEdit) {
+                          success = await ref
+                              .read(camerasProvider.notifier)
+                              .updateCamera(cameraId!, form);
+                        } else {
+                          success = await ref
+                              .read(camerasProvider.notifier)
+                              .addCamera(form);
+                        }
+                        if (!ctx.mounted) return;
+                        if (success) {
+                          Navigator.pop(ctx);
+                        } else {
+                          final error = ref.read(camerasProvider).error;
+                          if (error != null && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(error),
+                                  backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
+                child: Text(isSaving
+                    ? "Saving..."
+                    : (isEdit ? "Save Changes" : "Add Camera")),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(Camera cam) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Camera"),
+        content: Text("Are you sure you want to delete '${cam.name}'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child:
+                const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(camerasProvider.notifier).deleteCamera(cam.id);
+    }
+  }
+
+  void _showCameraPreview(Camera cam) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -49,49 +185,93 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title
-              Text(
-                'Camera Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
+              Row(
+                children: [
+                  const Text('Camera Preview',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                    iconSize: 20,
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Camera preview
+              // Stream preview
               Container(
                 width: double.infinity,
-                height: 120,
+                height: 180,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
                   children: [
-                    const Center(
-                      child: Icon(Icons.videocam, size: 48, color: Colors.grey),
-                    ),
+                    // Try to load the stream if URL is available
+                    if (cam.effectiveStreamUrl != null &&
+                        !Camera.isVideoUrl(cam.effectiveStreamUrl))
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          cam.effectiveStreamUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 180,
+                          errorBuilder: (ctx, err, stack) =>
+                              const Center(
+                            child: Icon(Icons.videocam_off,
+                                size: 48, color: Colors.grey),
+                          ),
+                          loadingBuilder: (ctx, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2),
+                            );
+                          },
+                        ),
+                      )
+                    else
+                      const Center(
+                        child: Icon(Icons.videocam,
+                            size: 48, color: Colors.grey),
+                      ),
+
+                    // LIVE / OFFLINE badge
                     Positioned(
                       top: 10,
                       right: 10,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isLive ? AppColors.success : AppColors.error,
+                          color: cam.isOnline
+                              ? AppColors.success
+                              : AppColors.error,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 6, height: 6,
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle),
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              isLive ? "LIVE" : "OFFLINE",
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              cam.isOnline ? "LIVE" : "OFFLINE",
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700),
                             ),
                           ],
                         ),
@@ -100,65 +280,56 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-
-              // Camera Name
-              Text('CAMERA NAME', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-              const SizedBox(height: 6),
-              Text(
-                cam["name"] as String,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B)),
-              ),
               const SizedBox(height: 16),
 
-              // Location
-              Text('LOCATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-              const SizedBox(height: 6),
-              Text(
-                cam["loc"] as String,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B)),
-              ),
+              // Camera info
+              _infoRow(Icons.videocam, "Name", cam.name),
+              _infoRow(Icons.location_on, "Location", cam.location),
+              if (cam.ipAddress != null)
+                _infoRow(Icons.lan, "IP Address", cam.ipAddress!),
+              _infoRow(Icons.access_time, "Last Active",
+                  cam.formattedLastActive),
+              _infoRow(Icons.warning_amber, "Total Alerts",
+                  '${cam.totalAlerts}'),
+
               const SizedBox(height: 16),
 
-              // Alerts
-              Text('ALERTS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-              const SizedBox(height: 6),
-              Text(
-                '${cam["alerts"]}',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B)),
-              ),
-              const SizedBox(height: 24),
-
-              // Buttons
+              // Actions
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        _showDeleteConfirmation(context, cam["name"] as String, index);
+                        _showEditDialog(cam);
                       },
-                      icon: const Icon(Icons.delete_outline, size: 16),
-                      label: const Text('Delete Camera', style: TextStyle(fontSize: 13)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: AppColors.error.withAlpha(120)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                      icon: const Icon(Icons.settings, size: 16),
+                      label: const Text("Settings"),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx),
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await ref
+                            .read(camerasProvider.notifier)
+                            .toggleStatus(cam.id);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      },
+                      icon: Icon(
+                          cam.isOnline
+                              ? Icons.power_off
+                              : Icons.power,
+                          size: 16),
+                      label: Text(cam.isOnline
+                          ? "Go Offline"
+                          : "Go Online"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: cam.isOnline
+                            ? AppColors.warning
+                            : AppColors.success,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Close', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -170,279 +341,24 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, String cameraName, int index) {
+  Widget _infoRow(IconData icon, String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              'Delete Camera',
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+          const SizedBox(width: 8),
+          Text('$label: ',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to delete "$cameraName"? This action cannot be undone.',
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deleteCamera(index);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$cameraName deleted successfully'),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w600)),
+                  fontSize: 13,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w500)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showAddCameraDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final nameController = TextEditingController();
-    final locationController = TextEditingController();
-    final urlController = TextEditingController();
-    String selectedStatus = "Online";
-    final labelColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setStateDialog) => Dialog(
-          backgroundColor: isDark ? const Color(0xFF141C2F) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    'Add New Camera',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Camera Name Field
-                  Text('CAMERA NAME *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: nameController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Camera 1 - Main Entrance',
-                      hintStyle: TextStyle(color: labelColor.withAlpha(120), fontSize: 13),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Location Field
-                  Text('LOCATION *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: locationController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Building A - Floor 2',
-                      hintStyle: TextStyle(color: labelColor.withAlpha(120), fontSize: 13),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // IP Address / URL Field
-                  Text('IP ADDRESS OR VIDEO URL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: urlController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: '192.168.1.100  or  https://example.com/video.mp4',
-                      hintStyle: TextStyle(color: labelColor.withAlpha(120), fontSize: 13),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Status Radio Buttons
-                  Text('STATUS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor, letterSpacing: 0.5)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      // Online Option
-                      GestureDetector(
-                        onTap: () => setStateDialog(() => selectedStatus = "Online"),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16, height: 16,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                border: Border.all(
-                                  color: selectedStatus == "Online" ? const Color(0xFF3B82F6) : Colors.grey,
-                                  width: selectedStatus == "Online" ? 4 : 1,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('Online', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      // Offline Option
-                      GestureDetector(
-                        onTap: () => setStateDialog(() => selectedStatus = "Offline"),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16, height: 16,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                border: Border.all(
-                                  color: selectedStatus == "Offline" ? const Color(0xFF3B82F6) : Colors.grey,
-                                  width: selectedStatus == "Offline" ? 4 : 1,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('Offline', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white : const Color(0xFF64748B),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: const Text('Cancel', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          final name = nameController.text.trim();
-                          final loc = locationController.text.trim();
-                          if (name.isEmpty || loc.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Please fill in required fields'),
-                                backgroundColor: AppColors.warning,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
-                            return;
-                          }
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _cameras.add({
-                              "name": name,
-                              "loc": loc,
-                              "status": selectedStatus == "Online" ? "live" : "offline",
-                              "time": selectedStatus == "Online" ? "Active now" : "Just now",
-                              "alerts": 0,
-                            });
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('$name added successfully'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF60A5FA),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: const Text('Add Camera', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -450,168 +366,253 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryText = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final state = ref.watch(camerasProvider);
 
-    final online = _cameras.where((c) => c["status"] == "live").length;
-    final offline = _cameras.length - online;
-    final totalAlerts = _cameras.fold<int>(0, (sum, c) => sum + (c["alerts"] as int));
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with Add button
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Camera Management", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text("Monitor and manage all security cameras", style: TextStyle(color: secondaryText, fontSize: 14)),
-                  ],
+    return RefreshIndicator(
+      onRefresh: () => ref.read(camerasProvider.notifier).fetch(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Cameras",
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                          "Manage surveillance cameras and live feeds",
+                          style:
+                              TextStyle(color: secondaryText, fontSize: 14)),
+                    ],
+                  ),
                 ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _showAddCameraDialog(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text("Add", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ElevatedButton.icon(
+                  onPressed: _showAddDialog,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text("Add"),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          Row(
-            children: [
-              Expanded(child: StatCard(value: _cameras.length.toString(), label: "Total Cameras", icon: Icons.videocam, color: AppColors.primary)),
-              const SizedBox(width: 12),
-              Expanded(child: StatCard(value: online.toString(), label: "Online", icon: Icons.wifi, color: AppColors.success)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: StatCard(value: offline.toString(), label: "Offline", icon: Icons.wifi_off, color: AppColors.error)),
-              const SizedBox(width: 12),
-              Expanded(child: StatCard(value: totalAlerts.toString(), label: "Total Alerts", icon: Icons.warning_amber, color: AppColors.warning)),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Camera grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.72,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              ],
             ),
-            itemCount: _cameras.length,
-            itemBuilder: (context, i) {
-              final cam = _cameras[i];
-              final isLive = cam["status"] == "live";
+            const SizedBox(height: 16),
 
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            // Stats
+            Row(
+              children: [
+                Expanded(
+                    child: StatCard(
+                        value: '${state.stats.total}',
+                        label: "Total",
+                        icon: Icons.videocam,
+                        color: AppColors.primary)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: StatCard(
+                        value: '${state.stats.online}',
+                        label: "Online",
+                        icon: Icons.check_circle_outline,
+                        color: AppColors.success)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: StatCard(
+                        value: '${state.stats.offline}',
+                        label: "Offline",
+                        icon: Icons.cancel_outlined,
+                        color: AppColors.error)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Camera grid
+            if (state.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: ListShimmer(itemCount: 4),
+              )
+            else if (state.cameras.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text("No cameras configured.",
+                      style: TextStyle(color: secondaryText, fontSize: 14)),
                 ),
+              )
+            else
+              AnimationLimiter(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Camera preview
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkBg : AppColors.lightBg,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  children: state.cameras.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final cam = entry.value;
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _cameraCard(cam, isDark, secondaryText),
+                        ),
                       ),
-                      child: Stack(
+                    );
+                  }).toList(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cameraCard(Camera cam, bool isDark, Color secondaryText) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+      ),
+      child: InkWell(
+        onTap: () => _showCameraPreview(cam),
+        child: Column(
+          children: [
+            // Preview area
+            Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14)),
+              ),
+              child: Stack(
+                children: [
+                  // Try to load stream
+                  if (cam.effectiveStreamUrl != null &&
+                      !Camera.isVideoUrl(cam.effectiveStreamUrl))
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(14)),
+                      child: Image.network(
+                        cam.effectiveStreamUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 120,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.videocam,
+                              size: 36, color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  else
+                    const Center(
+                      child: Icon(Icons.videocam,
+                          size: 36, color: Colors.grey),
+                    ),
+
+                  // Status badge
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cam.isOnline
+                            ? AppColors.success
+                            : AppColors.error,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Center(child: Icon(Icons.videocam, size: 36, color: Colors.grey)),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isLive ? AppColors.success : AppColors.error,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(width: 5, height: 5, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-                                  const SizedBox(width: 4),
-                                  Text(isLive ? "LIVE" : "OFFLINE", style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            ),
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            cam.isOnline ? "LIVE" : "OFFLINE",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ),
 
-                    // Info
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              cam["name"] as String,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(cam["loc"] as String, style: TextStyle(color: secondaryText, fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            const Spacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(cam["time"] as String, style: TextStyle(color: secondaryText, fontSize: 10)),
-                                Text("${cam["alerts"]} alerts", style: TextStyle(color: (cam["alerts"] as int) > 0 ? AppColors.warning : secondaryText, fontSize: 10, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: () => _showCameraSettings(context, cam, i),
-                                icon: const Icon(Icons.settings, size: 14),
-                                label: const Text("Settings", style: TextStyle(fontSize: 11)),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                ),
-                              ),
-                            ),
-                          ],
+            // Info
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(cam.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on,
+                          size: 14, color: secondaryText),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(cam.location,
+                            style: TextStyle(
+                                color: secondaryText, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.warning_amber,
+                          size: 14, color: secondaryText),
+                      const SizedBox(width: 4),
+                      Text('${cam.totalAlerts} alerts',
+                          style: TextStyle(
+                              color: secondaryText, fontSize: 12)),
+                      const Spacer(),
+                      // Delete button
+                      InkWell(
+                        onTap: () => _confirmDelete(cam),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: AppColors.error.withAlpha(80)),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.delete_outline,
+                              size: 16, color: AppColors.error),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

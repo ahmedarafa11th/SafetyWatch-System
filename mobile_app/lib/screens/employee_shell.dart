@@ -1,22 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_colors.dart';
+import '../providers/auth_provider.dart';
 import 'employee/employee_dashboard.dart';
 import 'employee/employee_attendance.dart';
 
-class EmployeeShell extends StatefulWidget {
+class EmployeeShell extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
   const EmployeeShell({super.key, required this.onToggleTheme});
 
   @override
-  State<EmployeeShell> createState() => _EmployeeShellState();
+  ConsumerState<EmployeeShell> createState() => _EmployeeShellState();
 }
 
-class _EmployeeShellState extends State<EmployeeShell> {
+class _EmployeeShellState extends ConsumerState<EmployeeShell> {
   int _currentIndex = 0;
+
+  Future<void> _logout() async {
+    await ref.read(authProvider.notifier).logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, 'login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.name ?? 'Employee';
+
     final pages = [
       const EmployeeDashboardScreen(),
       const EmployeeAttendanceScreen(),
@@ -28,7 +41,8 @@ class _EmployeeShellState extends State<EmployeeShell> {
           padding: const EdgeInsets.only(left: 12),
           child: Row(
             children: [
-              Icon(Icons.visibility, size: 22,
+              Icon(Icons.visibility,
+                  size: 22,
                   color: isDark ? Colors.white : const Color(0xFF1E293B)),
             ],
           ),
@@ -36,24 +50,23 @@ class _EmployeeShellState extends State<EmployeeShell> {
         title: const Text("SafetyWatch"),
         actions: [
           IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 20),
+            icon:
+                Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 20),
             onPressed: widget.onToggleTheme,
           ),
           PopupMenuButton<String>(
             offset: const Offset(0, 45),
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 enabled: false,
-                child: Text("Welcome, John Employee",
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text("Welcome, $userName",
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'logout', child: Text("Logout")),
             ],
             onSelected: (v) {
-              if (v == 'logout') {
-                Navigator.pushReplacementNamed(context, '/');
-              }
+              if (v == 'logout') _logout();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -62,7 +75,13 @@ class _EmployeeShellState extends State<EmployeeShell> {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: AppColors.primary.withAlpha(30),
-                    child: const Icon(Icons.person, size: 16, color: AppColors.primary),
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
+                      style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12),
+                    ),
                   ),
                   const SizedBox(width: 6),
                   const Icon(Icons.arrow_drop_down, size: 18),
@@ -72,13 +91,36 @@ class _EmployeeShellState extends State<EmployeeShell> {
           ),
         ],
       ),
-      body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: 'Attendance'),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: pages[_currentIndex],
+      ),
+      // M3 NavigationBar (replacing legacy BottomNavigationBar)
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) {
+          HapticFeedback.lightImpact();
+          setState(() => _currentIndex = i);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Attendance',
+          ),
         ],
       ),
     );
