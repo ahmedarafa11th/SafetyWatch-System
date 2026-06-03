@@ -3,12 +3,16 @@
 # ----------------------------------------------------------------------
 # AI / Data Science
 # ----------------------------------------------------------------------
-ai/checkpoints/*.h5
-ai/checkpoints/*.hdf5
-ai/__pycache__/
-ai/*.pyc
-ai/venv/
-ai/.env
+ai/violence_detection/checkpoints/*.h5
+ai/violence_detection/checkpoints/*.hdf5
+ai/violence_detection/__pycache__/
+ai/violence_detection/*.pyc
+ai/violence_detection/.env
+ai/face_recognition/__pycache__/
+ai/face_recognition/*.pyc
+ai/face_recognition/.env
+ai/face_recognition/*.tgz
+ai/face_recognition/data/
 *.mp4
 *.avi
 *.jpg
