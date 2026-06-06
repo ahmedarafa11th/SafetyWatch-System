@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Employee;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,7 @@ class MyDashboardController extends Controller
     // GET /api/employee/dashboard
     public function index(Request $request)
     {
-        $employee = $request->user()->employee;
+        $employee = Employee::withoutGlobalScopes()->where('user_id', $request->user()->id)->first();
 
         if (!$employee) {
             return $this->error('Employee profile not found.', 404);

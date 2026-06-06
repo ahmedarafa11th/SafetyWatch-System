@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function LoginPage() {
 
   useEffect(() => {
-    document.title = "Login — SafetyWatch";
+
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

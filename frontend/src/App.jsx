@@ -33,7 +33,6 @@ export default function App() {
         <Route path="/employees" element={null} />
         <Route path="/cameras" element={null} />
         <Route path="/security-alerts" element={null} />
-        <Route path="/violations" element={null} />
       </Route>
 
       <Route

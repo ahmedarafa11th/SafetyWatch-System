@@ -11,29 +11,53 @@ class AlertController extends Controller
 {
     use ApiResponse;
 
-    // GET /api/admin/alerts
     public function index(Request $request)
     {
-        $alerts = Alert::with(['camera', 'violation', 'actionedBy'])
+        // Merge Violations into Alerts by fetching Violations directly
+        $alerts = \App\Models\Violation::with(['camera', 'employee.user', 'resolvedBy'])
             ->when($request->status,   fn($q) => $q->where('status', $request->status))
             ->when($request->severity, fn($q) => $q->where('severity', $request->severity))
-            ->latest()
+            ->latest('detected_at')
             ->paginate(15);
 
+        // Map violations to alert format for the frontend
+        $mappedItems = collect($alerts->items())->map(function ($violation) {
+            $title = match($violation->type) {
+                'violence'              => 'Violence Detected',
+                'restricted_area'       => 'Restricted Area Access',
+                'unusual_activity'      => 'Suspicious Activity',
+                'crowd_detection'       => 'Crowd Detection',
+                'safety_violation'      => 'Safety Violation',
+                'unauthorized_presence' => 'Unauthorized Presence',
+                default                 => 'Security Alert',
+            };
+
+            return [
+                'id'          => $violation->id,
+                'title'       => $title,
+                'description' => $violation->description,
+                'severity'    => $violation->severity,
+                'status'      => $violation->status,
+                'confidence'  => $violation->confidence,
+                'camera'      => $violation->camera,
+                'created_at'  => $violation->detected_at,
+            ];
+        });
+
         $stats = [
-            'active'         => Alert::active()->count(),
-            'critical'       => Alert::critical()->count(),
-            'unread'         => Alert::unread()->count(),
-            'resolved_today' => Alert::whereDate('actioned_at', today())->where('status','resolved')->count(),
-            'avg_confidence' => round(Alert::avg('confidence'), 1),
+            'active'         => \App\Models\Violation::active()->count(),
+            'critical'       => \App\Models\Violation::where('severity', 'critical')->count(),
+            'unread'         => \App\Models\Violation::where('status', 'active')->count(),
+            'resolved_today' => \App\Models\Violation::whereDate('resolved_at', today())->count(),
+            'avg_confidence' => round(\App\Models\Violation::avg('confidence') ?? 0, 1),
         ];
 
         return response()->json([
             'status'  => true,
-            'message' => 'Alerts fetched',
+            'message' => 'Alerts and Violations fetched',
             'data'    => [
                 'stats'  => $stats,
-                'alerts' => $alerts->items(),
+                'alerts' => $mappedItems,
             ],
             'meta'    => [
                 'current_page' => $alerts->currentPage(),
@@ -45,33 +69,23 @@ class AlertController extends Controller
     }
 
     // POST /api/admin/alerts/{id}/resolve
-    public function resolve(Request $request, Alert $alert)
+    public function resolve(Request $request, \App\Models\Violation $alert)
     {
-        $alert->update([
-            'status'      => 'resolved',
-            'actioned_by' => $request->user()->id,
-            'actioned_at' => now(),
-            'is_read'     => true,
-        ]);
+        $alert->resolve($request->user()->id);
         return $this->success(null, 'Alert resolved');
     }
 
     // POST /api/admin/alerts/{id}/dismiss
-    public function dismiss(Request $request, Alert $alert)
+    public function dismiss(Request $request, \App\Models\Violation $alert)
     {
-        $alert->update([
-            'status'      => 'dismissed',
-            'actioned_by' => $request->user()->id,
-            'actioned_at' => now(),
-            'is_read'     => true,
-        ]);
+        $alert->dismiss($request->user()->id);
         return $this->success(null, 'Alert dismissed');
     }
 
     // POST /api/admin/alerts/mark-all-read
     public function markAllRead()
     {
-        Alert::unread()->update(['is_read' => true]);
-        return $this->success(null, 'All alerts marked as read');
+        \App\Models\Violation::active()->update(['status' => 'dismissed']); // Equivalent to marking low severity as dismissed
+        return $this->success(null, 'All alerts marked as read/dismissed');
     }
 }

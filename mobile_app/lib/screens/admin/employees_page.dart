@@ -7,6 +7,7 @@ import '../../widgets/loading_shimmer.dart';
 import '../../providers/employees_provider.dart';
 import '../../models/employee.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
 
 class EmployeesPageScreen extends ConsumerStatefulWidget {
   const EmployeesPageScreen({super.key});
@@ -358,8 +359,12 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
               const Spacer(),
               Icon(Icons.calendar_today, size: 14, color: secondaryText),
               const SizedBox(width: 6),
-              Text(emp.joinDate ?? '—',
-                  style: TextStyle(color: secondaryText, fontSize: 13)),
+              Text(
+                emp.joinDate != null && emp.joinDate!.isNotEmpty 
+                  ? DateFormat('MMM dd, yyyy').format(DateTime.tryParse(emp.joinDate!) ?? DateTime.now())
+                  : '—',
+                style: TextStyle(color: secondaryText, fontSize: 13),
+              ),
             ],
           ),
           const SizedBox(height: 12),

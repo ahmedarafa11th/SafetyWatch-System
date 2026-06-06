@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 export default function SignupPage() {
 
   useEffect(() => {
-    document.title = "Sign Up — SafetyWatch";
+
   }, []);
   const [role, setRole] = useState('employee');
 

@@ -19,7 +19,7 @@ const initialLogs = [
 export default function AttendancePage() {
 
   useEffect(() => {
-    document.title = "Attendance — SafetyWatch";
+
   }, []);
   const [filterMonth, setFilterMonth] = useState('');
   const [tempMonth, setTempMonth] = useState('');
@@ -40,6 +40,12 @@ export default function AttendancePage() {
     if (status === 'Present') return 'badge-present';
     if (status === 'Late') return 'badge-late';
     return 'badge-absent';
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const applyFilter = () => {
@@ -64,7 +70,7 @@ export default function AttendancePage() {
     const headers = ['Date', 'Check In', 'Check Out', 'Total Hours', 'Status'];
     const csvContent = [
       headers.join(','),
-      ...filteredLogs.map(r => `"${r.date}","${r.in}","${r.out}","${r.hours}h","${r.status}"`)
+      ...filteredLogs.map(r => `"${formatDate(r.date)}","${r.in}","${r.out}","${r.hours}h","${r.status}"`)
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -160,7 +166,7 @@ export default function AttendancePage() {
                 const isDash = log.in === "-";
                 return (
                   <tr key={idx}>
-                    <td className="date-cell">{log.date}</td>
+                    <td className="date-cell">{formatDate(log.date)}</td>
                     <td className={isDash ? 'dash-cell' : ''}>{log.in}</td>
                     <td className={isDash ? 'dash-cell' : ''}>{log.out}</td>
                     <td>{log.hours}h</td>

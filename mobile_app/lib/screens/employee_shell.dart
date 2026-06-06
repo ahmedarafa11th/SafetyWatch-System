@@ -5,6 +5,7 @@ import '../core/app_colors.dart';
 import '../providers/auth_provider.dart';
 import 'employee/employee_dashboard.dart';
 import 'employee/employee_attendance.dart';
+import '../widgets/logo_widget.dart';
 
 class EmployeeShell extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
@@ -37,17 +38,9 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Row(
-            children: [
-              Icon(Icons.visibility,
-                  size: 22,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B)),
-            ],
-          ),
-        ),
-        title: const Text("SafetyWatch"),
+        title: const LogoWidget(size: 24, fontSize: 18),
+        centerTitle: false,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon:
@@ -56,36 +49,34 @@ class _EmployeeShellState extends ConsumerState<EmployeeShell> {
           ),
           PopupMenuButton<String>(
             offset: const Offset(0, 45),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             itemBuilder: (_) => [
               PopupMenuItem(
-                enabled: false,
-                child: Text("Welcome, $userName",
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: 'logout',
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                    SizedBox(width: 12),
+                    Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(value: 'logout', child: Text("Logout")),
             ],
             onSelected: (v) {
               if (v == 'logout') _logout();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.primary.withAlpha(30),
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
-                      style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.arrow_drop_down, size: 18),
-                ],
+              child: CircleAvatar(
+                radius: 15,
+                backgroundColor: AppColors.primary.withAlpha(30),
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
+                ),
               ),
             ),
           ),

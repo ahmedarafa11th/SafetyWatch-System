@@ -8,7 +8,6 @@ import AttendanceAdminPage from './AttendanceAdminPage';
 import EmployeesPage from './EmployeesPage';
 import CamerasPage from './CamerasPage';
 import SecurityAlertsPage from './SecurityAlertsPage';
-import ViolationsPage from './ViolationsPage';
 
 export default function AdminPortalPage() {
   const location = useLocation();
@@ -23,11 +22,10 @@ export default function AdminPortalPage() {
     '/employees': 'Employees — SafetyWatch',
     '/cameras': 'Cameras — SafetyWatch',
     '/security-alerts': 'Security Alerts — SafetyWatch',
-    '/violations': 'Violations — SafetyWatch',
   };
 
   useEffect(() => {
-    document.title = pathTitles[displayedPath] || "Admin Portal — SafetyWatch";
+
   }, [displayedPath]);
 
   useEffect(() => {
@@ -50,7 +48,6 @@ export default function AdminPortalPage() {
       case '/employees': return <EmployeesPage />;
       case '/cameras': return <CamerasPage />;
       case '/security-alerts': return <SecurityAlertsPage />;
-      case '/violations': return <ViolationsPage />;
       default: return null;
     }
   };

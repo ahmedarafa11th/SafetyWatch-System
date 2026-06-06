@@ -2,7 +2,7 @@ class ApiConstants {
   // Default base URL — override at app startup via setBaseUrl()
   // For Android emulator: 'http://10.0.2.2:8000'
   // For physical device on same network: 'http://192.168.x.x:8000'
-  static String _baseUrl = 'http://192.168.1.4:8000';
+  static String _baseUrl = 'http://192.168.1.4:8002';
 
   static String get baseUrl => _baseUrl;
 

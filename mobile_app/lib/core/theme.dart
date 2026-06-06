@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
   // Shared text theme — clean hierarchy, no browser defaults
-  static const _textTheme = TextTheme(
-    headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-    headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.3),
-    headlineSmall: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-    titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-    titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-    titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-    bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-    bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-    bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
-    labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.3),
-    labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-    labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+  static final _textTheme = GoogleFonts.dmSansTextTheme(
+    const TextTheme(
+      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+      headlineSmall: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+      bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+      bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+      labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+      labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+    )
   );
 
   static ThemeData get light => ThemeData(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/logo_widget.dart';
 
 // Password strength checker — ported from web frontend
 class _PasswordStrength {
@@ -148,11 +149,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Icon(
-                  Icons.visibility,
-                  size: 48,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                ),
+                const LogoWidget(size: 48, fontSize: 28),
                 const SizedBox(height: 16),
 
                 // Header
@@ -191,29 +188,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Role Toggle
-                      SizedBox(
-                        width: double.infinity,
-                        child: SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment<String>(
-                              value: 'employee',
-                              label: Text('Employee'),
-                              icon: Icon(Icons.person_outline),
-                            ),
-                            ButtonSegment<String>(
-                              value: 'admin',
-                              label: Text('Admin'),
-                              icon: Icon(Icons.admin_panel_settings_outlined),
-                            ),
-                          ],
-                          selected: {role},
-                          onSelectionChanged: (Set<String> newSelection) {
-                            setState(() {
-                              role = newSelection.first;
-                            });
-                          },
-                        ),
+                      // Role selector
+                      Row(
+                        children: [
+                          _buildRoleButton("employee", "Employee",
+                              Icons.person_outline, isDark),
+                          const SizedBox(width: 12),
+                          _buildRoleButton("admin", "Admin",
+                              Icons.shield_outlined, isDark),
+                        ],
                       ),
                       const SizedBox(height: 24),
 
@@ -245,7 +228,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                         ),
 
-                      // Success message (pending approval)
+                      // Success message
                       if (_success)
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -258,9 +241,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           child: Column(
                             children: [
-                              const Text(
-                                '✅ Account created! Your account is pending admin approval. You will be able to log in once an admin activates your account.',
-                                style: TextStyle(
+                              Text(
+                                role == 'admin' 
+                                  ? 'Account created successfully! You can now log in.'
+                                  : 'Account created! Your account is pending admin approval. You will be able to log in once an admin activates your account.',
+                                style: const TextStyle(
                                   color: Color(0xFF4ADE80),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -271,7 +256,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 height: 40,
                                 child: OutlinedButton(
                                   onPressed: () => Navigator.pushReplacementNamed(
-                                      context, '/login'),
+                                      context, 'login'),
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
                                         color: Color(0xFF4ADE80)),
@@ -559,6 +544,61 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRoleButton(
+      String value, String label, IconData icon, bool isDark) {
+    final isSelected = role == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() => role = value);
+          if (_error != null) setState(() => _error = null);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

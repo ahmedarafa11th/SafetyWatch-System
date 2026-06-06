@@ -8,6 +8,7 @@ import 'admin/employees_page.dart';
 import 'admin/admin_attendance.dart';
 import 'admin/alerts_screen.dart';
 import 'admin/camera_management.dart';
+import '../widgets/logo_widget.dart';
 
 class AdminShell extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
@@ -20,14 +21,7 @@ class AdminShell extends ConsumerStatefulWidget {
 class _AdminShellState extends ConsumerState<AdminShell> {
   int _currentIndex = 0;
 
-  // 5 tabs: Dashboard, Employees, Attendance, Alerts (merged with Violations), Cameras
-  final List<String> _titles = [
-    'Dashboard',
-    'Employees',
-    'Attendance',
-    'Alerts',
-    'Cameras',
-  ];
+
 
   final List<NavigationDestination> _destinations = const [
     NavigationDestination(
@@ -80,7 +74,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
+        title: const LogoWidget(size: 24, fontSize: 18),
+        centerTitle: false,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -89,36 +84,34 @@ class _AdminShellState extends ConsumerState<AdminShell> {
           ),
           PopupMenuButton<String>(
             offset: const Offset(0, 45),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             itemBuilder: (_) => [
               PopupMenuItem(
-                enabled: false,
-                child: Text("Welcome, $userName",
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: 'logout',
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                    SizedBox(width: 12),
+                    Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(value: 'logout', child: Text("Logout")),
             ],
             onSelected: (v) {
               if (v == 'logout') _logout();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.primary.withAlpha(30),
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : 'A',
-                      style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.arrow_drop_down, size: 18),
-                ],
+              child: CircleAvatar(
+                radius: 15,
+                backgroundColor: AppColors.primary.withAlpha(30),
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : 'A',
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
+                ),
               ),
             ),
           ),

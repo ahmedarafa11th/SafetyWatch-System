@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 function LoginContent({ switchToSignup }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [currentRole, setCurrentRole] = useState('employee');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ function LoginContent({ switchToSignup }) {
       return;
     }
     setLoading(true);
-    const result = await login(email, password, currentRole);
+    const result = await login(email, password, currentRole, rememberMe);
     setLoading(false);
     if (result.success) {
       setTimeout(() => {
@@ -100,13 +102,46 @@ function LoginContent({ switchToSignup }) {
 
         <div className="field">
           <label>Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={error ? 'input-error' : ''}
+          <div style={{position:'relative'}}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={error ? 'input-error' : ''}
+              style={{paddingRight:'2.5rem'}}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{position:'absolute', right:'0.75rem', top:'50%', transform:'translateY(-50%)',
+                background:'none', border:'none', cursor:'pointer', color:'var(--text-secondary)', padding:0}}
+            >
+              {showPassword ? (
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="remember-me-container" style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'1.2rem', marginTop:'0.5rem', fontSize:'0.9rem', color:'var(--text-secondary)'}}>
+          <input 
+            type="checkbox" 
+            id="rememberMe" 
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="custom-checkbox"
           />
+          <label htmlFor="rememberMe" style={{cursor:'pointer', userSelect:'none'}}>Remember me</label>
         </div>
 
         <button className="btn-submit" onClick={handleLogin} disabled={loading}>
@@ -178,7 +213,9 @@ function SignupContent({ switchToLogin }) {
 
     if (result.success) {
       setSuccess(true);
-      // Stay on page and show pending message — do NOT redirect to dashboard
+      if (role === 'admin') {
+        setTimeout(() => switchToLogin(), 3000);
+      }
     } else {
       setError(result.message || 'Registration failed. Please try again.');
     }
@@ -227,15 +264,30 @@ function SignupContent({ switchToLogin }) {
         )}
 
         {success && (
-          <div className="error-msg visible" style={{background:'rgba(34,197,94,0.1)', borderColor:'rgba(34,197,94,0.3)', color:'#4ade80'}}>
-            <span>✅ Account created! Your account is <strong>pending admin approval</strong>. You will be able to log in once an admin activates your account.</span>
-            <br/>
-            <button
-              style={{marginTop:'0.75rem', background:'rgba(34,197,94,0.2)', border:'1px solid rgba(34,197,94,0.4)', color:'#4ade80', padding:'0.4rem 1rem', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}
-              onClick={() => navigate('/login')}
-            >
-              Go to Login
-            </button>
+          <div className="error-msg visible" style={{background:'rgba(34,197,94,0.1)', borderColor:'rgba(34,197,94,0.3)', color:'#4ade80', marginBottom:'1rem'}}>
+            {role === 'admin' ? (
+              <>
+                <span>Account created successfully! You can now log in.</span>
+                <br/>
+                <button
+                  style={{marginTop:'0.75rem', background:'rgba(34,197,94,0.2)', border:'1px solid rgba(34,197,94,0.4)', color:'#4ade80', padding:'0.4rem 1rem', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}
+                  onClick={() => switchToLogin()}
+                >
+                  Go to Login
+                </button>
+              </>
+            ) : (
+              <>
+                <span>Account created! Your account is <strong>pending admin approval</strong>. You will be able to log in once an admin activates your account.</span>
+                <br/>
+                <button
+                  style={{marginTop:'0.75rem', background:'rgba(34,197,94,0.2)', border:'1px solid rgba(34,197,94,0.4)', color:'#4ade80', padding:'0.4rem 1rem', borderRadius:'6px', cursor:'pointer', fontSize:'0.85rem'}}
+                  onClick={() => switchToLogin()}
+                >
+                  Go to Login
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -315,7 +367,18 @@ function SignupContent({ switchToLogin }) {
               ].map(({ key, label }) => (
                 <div key={key} style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'0.72rem',
                   color: criteria[key] ? '#4ade80' : 'var(--text-secondary)'}}>
-                  <span>{criteria[key] ? '✅' : '○'}</span>
+                  <span style={{display:'flex', alignItems:'center'}}>
+                    {criteria[key] ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    )}
+                  </span>
                   <span>{label}</span>
                 </div>
               ))}
@@ -336,8 +399,17 @@ function SignupContent({ switchToLogin }) {
                 borderColor: confirmPassword ? (passwordsMatch ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)') : ''}}
             />
             {confirmPassword && (
-              <span style={{position:'absolute', right:'0.75rem', top:'50%', transform:'translateY(-50%)', fontSize:'1rem'}}>
-                {passwordsMatch ? '✅' : '❌'}
+              <span style={{position:'absolute', right:'0.75rem', top:'50%', transform:'translateY(-50%)', display:'flex', alignItems:'center'}}>
+                {passwordsMatch ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                )}
               </span>
             )}
           </div>
@@ -372,7 +444,7 @@ export default function AuthPortalPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    document.title = (activeTab === 'signup' ? "Sign Up — SafetyWatch" : "Login — SafetyWatch");
+
   }, [activeTab]);
 
   useEffect(() => {

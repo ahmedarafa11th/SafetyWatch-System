@@ -5,7 +5,7 @@ import { api } from '../api';
 export default function EmployeesPage() {
 
   useEffect(() => {
-    document.title = "Employees — SafetyWatch";
+
     fetchEmployees();
   }, []);
 

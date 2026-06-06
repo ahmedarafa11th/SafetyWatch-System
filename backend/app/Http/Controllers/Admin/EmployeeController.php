@@ -54,10 +54,11 @@ class EmployeeController extends Controller
             );
         }
 
-        // التحقق أن المستخدم مش عنده Employee Profile بالفعل
-        if ($user->employee) {
+        // التحقق أن المستخدم مش عنده Employee Profile بالفعل (في أي نظام)
+        $existingEmployee = Employee::withoutGlobalScopes()->where('user_id', $user->id)->first();
+        if ($existingEmployee) {
             return $this->error(
-                'This account is already linked to an existing employee profile.',
+                'This employee is already registered with another admin.',
                 422
             );
         }

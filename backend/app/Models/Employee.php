@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\BelongsToAdmin;
+
 class Employee extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, BelongsToAdmin;
 
     protected $fillable = [
         'user_id', 'employee_code', 'department', 'position',
@@ -44,7 +46,8 @@ class Employee extends Model
     public static function generateCode(): string
     {
         // نجيب أكبر رقم موجود ونزود عليه 1 — حتى مع الـ soft deletes
-        $last = static::withTrashed()
+        $last = static::withoutGlobalScopes()
+                       ->withTrashed()
                        ->where('employee_code', 'like', 'EMP-%')
                        ->orderByRaw('CAST(SUBSTR(employee_code, 5) AS INTEGER) DESC')
                        ->first();

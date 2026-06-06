@@ -7,6 +7,7 @@ import '../../widgets/stat_card.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/loading_shimmer.dart';
 import '../../providers/attendance_provider.dart';
+import 'package:intl/intl.dart';
 
 class AdminAttendanceScreen extends ConsumerStatefulWidget {
   const AdminAttendanceScreen({super.key});
@@ -239,7 +240,9 @@ class _AdminAttendanceScreenState
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                record.date,
+                                record.date.isNotEmpty 
+                                  ? DateFormat('MMM dd, yyyy').format(DateTime.tryParse(record.date) ?? DateTime.now())
+                                  : '—',
                                 style: TextStyle(
                                     color: secondaryText, fontSize: 12),
                               ),

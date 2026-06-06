@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
   });
 
   // POST /api/auth/login — real Laravel API call
-  const login = async (email, password) => {
+  const login = async (email, password, requestedRole) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
@@ -41,6 +41,14 @@ export function AuthProvider({ children }) {
       }
 
       const { user: userData, token } = json.data;
+
+      // Ensure the user is logging into the correct portal
+      if (requestedRole && userData.role !== requestedRole) {
+        return { 
+          success: false, 
+          message: `This account does not have ${requestedRole === 'admin' ? 'an admin' : 'an employee'} profile.` 
+        };
+      }
 
       // Store token for all future API calls (used by api.js)
       localStorage.setItem('sw_token', token);

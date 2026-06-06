@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToAdmin;
+
 class AiDetectionLog extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToAdmin;
 
     protected $fillable = [
         'camera_id', 'detection_type', 'is_threat', 'confidence',

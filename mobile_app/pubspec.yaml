@@ -23,6 +23,8 @@ dependencies:
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
   flutter_displaymode: ^0.7.0
+  google_fonts: ^8.1.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -42,4 +44,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/app_icon.jpg"
+  image_path: "assets/images/logo_v3.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo_v3.png"

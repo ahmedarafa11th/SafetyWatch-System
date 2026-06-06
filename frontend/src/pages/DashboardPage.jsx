@@ -4,7 +4,7 @@ import { api } from '../api';
 export default function DashboardPage() {
 
   useEffect(() => {
-    document.title = "Dashboard — SafetyWatch";
+
     fetchDashboard();
   }, []);
 

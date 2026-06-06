@@ -6,9 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToAdmin;
+
 class Attendance extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToAdmin;
 
     protected $fillable = [
         'employee_id', 'date', 'check_in', 'check_out',

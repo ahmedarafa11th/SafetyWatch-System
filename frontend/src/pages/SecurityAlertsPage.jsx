@@ -4,7 +4,7 @@ import { api } from '../api';
 export default function SecurityAlertsPage() {
 
   useEffect(() => {
-    document.title = "Security Alerts — SafetyWatch";
+
     fetchAlerts();
   }, []);
 

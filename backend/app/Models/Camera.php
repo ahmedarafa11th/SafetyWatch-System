@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\BelongsToAdmin;
+
 class Camera extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToAdmin;
 
     protected $fillable = [
         'name', 'location', 'ip_address', 'stream_url',

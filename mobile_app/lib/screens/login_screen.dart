@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/logo_widget.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
@@ -19,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   bool obscure = true;
   bool _isLoading = false;
+  bool rememberMe = false;
   String? _error;
 
   // Shake animation
@@ -74,6 +76,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     setState(() => _isLoading = false);
 
     if (result.success) {
+      if (result.role != role) {
+        setState(() => _error = 'Cannot log in to ${result.role} account from $role portal.');
+        _shakeController.forward(from: 0);
+        await authNotifier.logout();
+        return;
+      }
+
       // Navigate based on role
       if (result.role == 'admin') {
         Navigator.pushReplacementNamed(context, 'admin');
@@ -99,16 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Icon(
-                  Icons.visibility,
-                  size: 48,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "SafetyWatch",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
+                const LogoWidget(size: 48, fontSize: 28),
                 const SizedBox(height: 8),
                 Text(
                   "Sign in to access SafetyWatch",
@@ -269,7 +269,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 8),
+
+                          // Remember Me Checkbox
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: rememberMe,
+                                onChanged: (value) {
+                                  setState(() => rememberMe = value ?? false);
+                                },
+                                activeColor: AppColors.primary,
+                              ),
+                              Text(
+                                "Remember me",
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
                           // Sign In button
                           SizedBox(

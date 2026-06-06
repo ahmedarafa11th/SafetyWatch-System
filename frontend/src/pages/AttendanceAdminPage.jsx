@@ -5,7 +5,7 @@ import { api } from '../api';
 export default function AttendanceAdminPage() {
 
   useEffect(() => {
-    document.title = "Attendance Admin — SafetyWatch";
+
     fetchAttendance('');
   }, []);
 
@@ -37,6 +37,12 @@ export default function AttendanceAdminPage() {
     return 'badge-red';
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   const applyFilter = () => {
     setFilterMonth(tempMonth);
     setIsModalOpen(false);
@@ -56,7 +62,7 @@ export default function AttendanceAdminPage() {
       headers.join(','),
       ...logs.map(r => {
         const name = r.employee?.user?.name || '—';
-        return `"${name}","${r.date}","${r.check_in || '—'}","${r.check_out || '—'}","${r.total_hours || '—'}","${r.status}"`;
+        return `"${name}","${formatDate(r.date)}","${r.check_in || '—'}","${r.check_out || '—'}","${r.total_hours || '—'}","${r.status}"`;
       })
     ].join('\n');
 
@@ -170,7 +176,7 @@ export default function AttendanceAdminPage() {
               ) : logs.map((log, idx) => (
                 <tr key={log.id || idx}>
                   <td><strong>{log.employee?.user?.name || '—'}</strong></td>
-                  <td className="mono">{log.date}</td>
+                  <td className="mono">{formatDate(log.date)}</td>
                   <td className="mono">{log.check_in || '—'}</td>
                   <td className="mono">{log.check_out || '—'}</td>
                   <td className="mono">{log.total_hours ? `${log.total_hours}h` : '—'}</td>

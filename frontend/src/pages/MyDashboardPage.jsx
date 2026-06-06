@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export default function MyDashboardPage() {
 
   useEffect(() => {
-    document.title = "My Dashboard — SafetyWatch";
+
   }, []);
   const { user } = useAuth();
 

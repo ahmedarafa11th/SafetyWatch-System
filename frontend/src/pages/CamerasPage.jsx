@@ -128,7 +128,7 @@ function noStreamStyle(height) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CamerasPage() {
   useEffect(() => {
-    document.title = 'Cameras — SafetyWatch';
+
     fetchCameras();
   }, []);
 

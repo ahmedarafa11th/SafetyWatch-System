@@ -17,19 +17,26 @@ class AuthController extends Controller
     // POST /api/auth/register
     public function register(RegisterRequest $request)
     {
+        $role = $request->role ?? 'employee';
+        $isAdmin = $role === 'admin';
+
         $user = User::create([
             'name'      => $request->name,
             'email'     => $request->email,
             'password'  => Hash::make($request->password),
-            'is_active' => false,   // ← pending until admin approves
+            'is_active' => $isAdmin, // Admins don't need approval
         ]);
 
-        $user->assignRole($request->role ?? 'employee');
+        $user->assignRole($role);
 
-        // No token issued — user cannot log in until admin activates the account
+        // No token issued immediately — user must log in manually
+        $message = $isAdmin 
+            ? 'Account created successfully.' 
+            : 'Account created successfully. Please wait for admin approval.';
+
         return $this->success([
             'user' => $this->formatUser($user),
-        ], 'Account created successfully. Please wait for admin approval.', 201);
+        ], $message, 201);
     }
 
     // POST /api/auth/login
@@ -48,7 +55,6 @@ class AuthController extends Controller
             );
         }
 
-        $user->tokens()->delete();
         $user->updateLastLogin();
 
         $token = $user->createToken('safetywatch_token')->plainTextToken;

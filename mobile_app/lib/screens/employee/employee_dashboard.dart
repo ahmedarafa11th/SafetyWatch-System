@@ -302,7 +302,7 @@ class _EmployeeDashboardScreenState
   Widget _infoRow(
       String label, String value, bool isDark, Color secondaryText) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(label,
             style: TextStyle(color: secondaryText, fontSize: 13)),
