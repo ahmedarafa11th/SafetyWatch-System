@@ -7,16 +7,18 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libpq-dev \
     zip \
     unzip \
     sqlite3 \
-    libsqlite3-dev
+    libsqlite3-dev \
+    nginx
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
+# Install PHP extensions (both SQLite and PostgreSQL for flexibility)
+RUN docker-php-ext-install pdo_sqlite pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -35,29 +37,41 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage \
     && chmod -R 775 /var/www/bootstrap/cache
 
-# Ensure the SQLite mount directory is writable
-RUN mkdir -p /mnt/sqlite && chown -R www-data:www-data /mnt/sqlite
+# Configure Nginx for Render
+RUN echo 'server {\n\
+    listen 8000;\n\
+    root /var/www/public;\n\
+    index index.php;\n\
+    \n\
+    add_header Access-Control-Allow-Origin "*" always;\n\
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;\n\
+    add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept, X-Requested-With" always;\n\
+    \n\
+    if ($request_method = "OPTIONS") {\n\
+        return 204;\n\
+    }\n\
+    \n\
+    location / {\n\
+        try_files $uri $uri/ /index.php?$query_string;\n\
+    }\n\
+    \n\
+    location ~ \\.php$ {\n\
+        fastcgi_pass 127.0.0.1:9000;\n\
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;\n\
+        include fastcgi_params;\n\
+    }\n\
+    \n\
+    client_max_body_size 10M;\n\
+}' > /etc/nginx/sites-available/default
 
-# Add an explicit entrypoint script to ensure persistent SQLite
+# Create entrypoint script
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'set -e' >> /start.sh && \
     echo '' >> /start.sh && \
-    echo '# Force the database path to the persistent volume' >> /start.sh && \
-    echo 'export DB_DATABASE=/mnt/sqlite/database.sqlite' >> /start.sh && \
-    echo '' >> /start.sh && \
-    echo '# Fix permissions on the mounted volume' >> /start.sh && \
-    echo 'chown -R www-data:www-data /mnt/sqlite' >> /start.sh && \
-    echo 'touch /mnt/sqlite/database.sqlite' >> /start.sh && \
-    echo 'chmod 666 /mnt/sqlite/database.sqlite' >> /start.sh && \
-    echo '' >> /start.sh && \
-    echo '# Create a symlink so any code using the default path also hits the volume' >> /start.sh && \
-    echo 'rm -f /var/www/database/database.sqlite' >> /start.sh && \
-    echo 'ln -sf /mnt/sqlite/database.sqlite /var/www/database/database.sqlite' >> /start.sh && \
-    echo '' >> /start.sh && \
-    echo '# Remove any cached config that might have stale paths' >> /start.sh && \
+    echo '# Remove any cached config' >> /start.sh && \
     echo 'rm -f /var/www/bootstrap/cache/config.php' >> /start.sh && \
     echo '' >> /start.sh && \
-    echo '# Run migrations (will not re-run already-applied ones)' >> /start.sh && \
+    echo '# Run migrations' >> /start.sh && \
     echo 'php artisan migrate --force' >> /start.sh && \
     echo '' >> /start.sh && \
     echo '# Only seed if users table is empty (first boot)' >> /start.sh && \
@@ -66,9 +80,13 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo '  php artisan db:seed --force' >> /start.sh && \
     echo 'fi' >> /start.sh && \
     echo '' >> /start.sh && \
-    echo '# Start the server' >> /start.sh && \
-    echo 'php artisan serve --host=0.0.0.0 --port=8000' >> /start.sh && \
+    echo '# Start PHP-FPM in the background' >> /start.sh && \
+    echo 'php-fpm -D' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '# Start Nginx in foreground' >> /start.sh && \
+    echo 'nginx -g "daemon off;"' >> /start.sh && \
     chmod +x /start.sh
 
-# Run the app
+EXPOSE 8000
+
 CMD ["/start.sh"]
