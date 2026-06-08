@@ -1,15 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../context/AuthContext';
-
+import logoLight from '../assets/logo_v2.png';
+import logoDark from '../assets/logo_v2_dark.png';
 export default function Navbar({ variant = 'landing' }) {
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const Logo = () => (
     <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', fontSize: '22px', fontWeight: 'bold' }}>
-      <img src="/src/assets/logo_v2.png" alt="SafetyWatch Logo" className="logo-light-img" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-      <img src="/src/assets/logo_v2_dark.png" alt="SafetyWatch Logo" className="logo-dark-img" style={{ width: '28px', height: '28px', objectFit: 'contain', }} />
+      <img src={logoLight} alt="SafetyWatch Logo" className="logo-light-img" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+      <img src={logoDark} alt="SafetyWatch Logo" className="logo-dark-img" style={{ width: '28px', height: '28px', objectFit: 'contain', }} />
       <span>
         <span className="logo-text-1">Safety</span><span className="logo-text-2">Watch</span>
       </span>

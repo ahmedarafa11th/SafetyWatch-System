@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'user.dart';
 
 class Employee {
@@ -63,6 +64,9 @@ class EmployeeFormData {
   String phone;
   String shiftStart;
   String shiftEnd;
+  XFile? photoFront;
+  XFile? photoLeft;
+  XFile? photoRight;
 
   EmployeeFormData({
     this.email = '',
@@ -73,6 +77,9 @@ class EmployeeFormData {
     this.phone = '',
     this.shiftStart = '08:00',
     this.shiftEnd = '17:00',
+    this.photoFront,
+    this.photoLeft,
+    this.photoRight,
   });
 
   Map<String, dynamic> toJson() => {

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import logoLight from '../assets/logo_v2.png';
+import logoDark from '../assets/logo_v2_dark.png';
+import heroMockup from '../assets/hero-mockup.png';
 
 export default function LandingPage() {
 
@@ -58,8 +61,8 @@ export default function LandingPage() {
 {/*  NAV  */}
 <nav>
     <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', fontSize: '22px', fontWeight: 'bold' }}>
-      <img src="/src/assets/logo_v2.png" alt="SafetyWatch Logo" className="logo-light-img" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-      <img src="/src/assets/logo_v2_dark.png" alt="SafetyWatch Logo" className="logo-dark-img" style={{ width: '28px', height: '28px', objectFit: 'contain', }} />
+      <img src={logoLight} alt="SafetyWatch Logo" className="logo-light-img" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+      <img src={logoDark} alt="SafetyWatch Logo" className="logo-dark-img" style={{ width: '28px', height: '28px', objectFit: 'contain', }} />
       <span>
         <span className="logo-text-1">Safety</span><span className="logo-text-2">Watch</span>
       </span>
@@ -164,7 +167,7 @@ export default function LandingPage() {
     </div>
     <div className="hero-right fade-up delay-2">
       <div className="hero-img-card">
-        <img src="/src/assets/hero-mockup.png" style={{ width: "100%", height: "100%", minHeight: "500px", objectFit: "cover", objectPosition: "center 30%", display: "block" }} />
+        <img src={heroMockup} style={{ width: "100%", height: "100%", minHeight: "500px", objectFit: "cover", objectPosition: "center 30%", display: "block" }} />
       </div>
       <div className="badge-card badge-card-top">
         <div className="badge-icon badge-icon-alert">

@@ -330,7 +330,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
             Icon(Icons.check_circle_outline,
                 size: 48, color: AppColors.success.withAlpha(128)),
             const SizedBox(height: 12),
-            Text("No alerts found. System is clear ✓",
+            Text("No alerts found. System is clear",
                 style: TextStyle(color: secondaryText, fontSize: 14)),
           ],
         ),

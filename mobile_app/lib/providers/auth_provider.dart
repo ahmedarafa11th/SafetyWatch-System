@@ -118,7 +118,7 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await _dio.post(
         ApiConstants.login,
-        data: {'email': email, 'password': password},
+        data: {'email': email.trim().toLowerCase(), 'password': password},
       );
 
       final json = response.data;

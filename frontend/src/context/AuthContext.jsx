@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const AuthContext = createContext();
 
@@ -13,7 +13,7 @@ const DEMO_CREDENTIALS = {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('sw_user');
+      const saved = sessionStorage.getItem('sw_user') || localStorage.getItem('sw_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
   });
 
   // POST /api/auth/login — real Laravel API call
-  const login = async (email, password, requestedRole) => {
+  const login = async (email, password, requestedRole, rememberMe = true) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
         signal: controller.signal,
       });
 
@@ -50,17 +50,22 @@ export function AuthProvider({ children }) {
         };
       }
 
-      // Store token for all future API calls (used by api.js)
-      localStorage.setItem('sw_token', token);
-
       const userToStore = {
         id:    userData.id,
         name:  userData.name,
         email: userData.email,
-        role:  userData.role, // 'admin' or 'employee' — comes from Laravel Spatie
+        role:  userData.role,
       };
 
-      localStorage.setItem('sw_user', JSON.stringify(userToStore));
+      // Store token based on rememberMe preference
+      if (rememberMe) {
+        localStorage.setItem('sw_token', token);
+        localStorage.setItem('sw_user', JSON.stringify(userToStore));
+      } else {
+        sessionStorage.setItem('sw_token', token);
+        sessionStorage.setItem('sw_user', JSON.stringify(userToStore));
+      }
+
       setUser(userToStore);
 
       return { success: true, role: userData.role };
@@ -111,20 +116,26 @@ export function AuthProvider({ children }) {
 
   // POST /api/auth/logout — revoke server-side Sanctum token
   const logout = async () => {
-    const token = localStorage.getItem('sw_token');
-    if (token) {
-      try {
+    try {
+      const token = sessionStorage.getItem('sw_token') || localStorage.getItem('sw_token');
+      if (token) {
         await fetch(`${BASE_URL}/auth/logout`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
         });
-      } catch {
-        // If server unreachable, still log out locally
       }
+    } catch (e) {
+      console.error('Logout failed:', e);
+    } finally {
+      localStorage.removeItem('sw_token');
+      localStorage.removeItem('sw_user');
+      sessionStorage.removeItem('sw_token');
+      sessionStorage.removeItem('sw_user');
+      setUser(null);
     }
-    localStorage.removeItem('sw_token');
-    localStorage.removeItem('sw_user');
-    setUser(null);
   };
 
   return (

@@ -1,13 +1,18 @@
-const BASE_URL = '/api';
+// Use environment variable for API URL in production, fallback to local proxy in dev
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const request = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('sw_token');
+  const token = sessionStorage.getItem('sw_token') || localStorage.getItem('sw_token');
 
   const headers = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
     ...(options.headers || {}),
   };
+
+  // Only set Content-Type to JSON if body is NOT FormData
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -45,8 +50,8 @@ const request = async (endpoint, options = {}) => {
 
 export const api = {
   get:    (endpoint)        => request(endpoint, { method: 'GET' }),
-  post:   (endpoint, body)  => request(endpoint, { method: 'POST',   body: JSON.stringify(body) }),
-  put:    (endpoint, body)  => request(endpoint, { method: 'PUT',    body: JSON.stringify(body) }),
-  patch:  (endpoint, body)  => request(endpoint, { method: 'PATCH',  body: JSON.stringify(body) }),
+  post:   (endpoint, body)  => request(endpoint, { method: 'POST',   body: body instanceof FormData ? body : JSON.stringify(body) }),
+  put:    (endpoint, body)  => request(endpoint, { method: 'PUT',    body: body instanceof FormData ? body : JSON.stringify(body) }),
+  patch:  (endpoint, body)  => request(endpoint, { method: 'PATCH',  body: body instanceof FormData ? body : JSON.stringify(body) }),
   delete: (endpoint)        => request(endpoint, { method: 'DELETE' }),
 };

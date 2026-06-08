@@ -441,7 +441,7 @@ export default function CamerasPage() {
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
               <button className="btn btn-outline" onClick={() => handleToggle(selected, editForm.status)} disabled={isSaving}>
-                {isSaving ? '...' : editForm.status === 'online' ? '🔴 Go Offline' : '🟢 Go Online'}
+                {isSaving ? '...' : editForm.status === 'online' ? 'Go Offline' : 'Go Online'}
               </button>
               <button className="btn btn-outline" onClick={() => handleDelete(selected)}>🗑 Delete</button>
               <button className="btn btn-outline" onClick={closeSettings}>Close</button>

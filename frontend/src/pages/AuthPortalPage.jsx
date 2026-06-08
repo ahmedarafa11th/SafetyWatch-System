@@ -31,7 +31,11 @@ function LoginContent({ switchToSignup }) {
     setLoading(false);
     if (result.success) {
       setTimeout(() => {
-        navigate(result.role === 'admin' ? '/dashboard' : '/my-dashboard');
+        if (!rememberMe) {
+          navigate('/');
+        } else {
+          navigate(result.role === 'admin' ? '/dashboard' : '/my-dashboard');
+        }
       }, 700);
     } else {
       setError(result.message || 'Invalid email or password. Please try again.');

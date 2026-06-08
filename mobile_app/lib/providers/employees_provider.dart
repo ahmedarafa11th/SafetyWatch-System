@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/api_constants.dart';
 import '../models/employee.dart';
+import 'package:dio/dio.dart';
 
 class EmployeesState {
   final List<Employee> employees;
@@ -63,7 +64,21 @@ class EmployeesNotifier extends Notifier<EmployeesState> {
   Future<bool> addEmployee(EmployeeFormData form) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
-      await _dio.post(ApiConstants.employees, data: form.toJson());
+      dynamic data = form.toJson();
+      if (form.photoFront != null || form.photoLeft != null || form.photoRight != null) {
+        data = FormData.fromMap(form.toJson());
+        if (form.photoFront != null) {
+          data.files.add(MapEntry('photo_front', await MultipartFile.fromFile(form.photoFront!.path, filename: form.photoFront!.name)));
+        }
+        if (form.photoLeft != null) {
+          data.files.add(MapEntry('photo_left', await MultipartFile.fromFile(form.photoLeft!.path, filename: form.photoLeft!.name)));
+        }
+        if (form.photoRight != null) {
+          data.files.add(MapEntry('photo_right', await MultipartFile.fromFile(form.photoRight!.path, filename: form.photoRight!.name)));
+        }
+      }
+
+      await _dio.post(ApiConstants.employees, data: data);
       state = state.copyWith(isSaving: false);
       await fetch(search: state.searchQuery);
       return true;
@@ -76,7 +91,26 @@ class EmployeesNotifier extends Notifier<EmployeesState> {
   Future<bool> updateEmployee(int id, EmployeeFormData form) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
-      await _dio.put(ApiConstants.employeeDetails(id.toString()), data: form.toJson());
+      dynamic data = form.toJson();
+      if (form.photoFront != null || form.photoLeft != null || form.photoRight != null) {
+        final mapData = form.toJson();
+        mapData['_method'] = 'PUT';
+        data = FormData.fromMap(mapData);
+        if (form.photoFront != null) {
+          data.files.add(MapEntry('photo_front', await MultipartFile.fromFile(form.photoFront!.path, filename: form.photoFront!.name)));
+        }
+        if (form.photoLeft != null) {
+          data.files.add(MapEntry('photo_left', await MultipartFile.fromFile(form.photoLeft!.path, filename: form.photoLeft!.name)));
+        }
+        if (form.photoRight != null) {
+          data.files.add(MapEntry('photo_right', await MultipartFile.fromFile(form.photoRight!.path, filename: form.photoRight!.name)));
+        }
+        // If sending FormData for an update in Laravel, we typically use POST with _method=PUT
+        await _dio.post(ApiConstants.employeeDetails(id.toString()), data: data);
+      } else {
+        await _dio.put(ApiConstants.employeeDetails(id.toString()), data: data);
+      }
+      
       state = state.copyWith(isSaving: false);
       await fetch(search: state.searchQuery);
       return true;

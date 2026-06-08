@@ -45,8 +45,10 @@ export default function DashboardPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Admin Dashboard</h1>
-        <p>Overview of your workplace safety system</p>
+        <div className="page-title">
+          <h1>Admin Dashboard</h1>
+          <p>Overview of your workplace safety system</p>
+        </div>
       </div>
 
       {/* STAT CARDS */}
@@ -158,7 +160,7 @@ export default function DashboardPage() {
           {isLoading ? (
             <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '14px' }}>Loading...</div>
           ) : recentAlerts.length === 0 ? (
-            <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '14px' }}>No active alerts. System is clear ✓</div>
+            <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '14px' }}>No active alerts. System is clear</div>
           ) : (
             recentAlerts.map((al, i) => (
               <div className="alert-row" key={i}>

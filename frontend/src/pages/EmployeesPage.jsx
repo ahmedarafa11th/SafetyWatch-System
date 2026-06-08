@@ -16,11 +16,11 @@ export default function EmployeesPage() {
   const [editEmployee, setEditEmployee] = useState(null); // null = add, object = edit
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form matches EmployeeRequest validation in Laravel
   const [formData, setFormData] = useState({
     name: '', email: '', department: '',
     position: '', status: 'active', join_date: '',
     phone: '', shift_start: '08:00', shift_end: '17:00',
+    photo_front: null, photo_left: null, photo_right: null,
   });
 
   const fetchEmployees = async (search = '') => {
@@ -68,12 +68,14 @@ export default function EmployeesPage() {
         phone: employee.phone || '',
         shift_start: employee.shift_start?.slice(0, 5) || '08:00',
         shift_end: employee.shift_end?.slice(0, 5) || '17:00',
+        photo_front: null, photo_left: null, photo_right: null,
       });
     } else {
       setFormData({
         name: '', email: '', department: '',
         position: '', status: 'active', join_date: '',
         phone: '', shift_start: '08:00', shift_end: '17:00',
+        photo_front: null, photo_left: null, photo_right: null,
       });
     }
     setModalOpen(true);
@@ -91,6 +93,10 @@ export default function EmployeesPage() {
       alert("Please fill all required fields.");
       return;
     }
+    if (!editEmployee && (!formData.photo_front || !formData.photo_left || !formData.photo_right)) {
+      alert("All 3 Face Recognition Photos (Front, Right, Left) are required to add a new employee.");
+      return;
+    }
     if (!editEmployee && !formData.email) {
       alert("Email is required. It must belong to an existing account.");
       return;
@@ -98,10 +104,30 @@ export default function EmployeesPage() {
 
     setIsSaving(true);
     try {
+      let payload = formData;
+      
+      // If we have files, we must send FormData instead of JSON
+      if (formData.photo_front || formData.photo_left || formData.photo_right) {
+        payload = new FormData();
+        Object.keys(formData).forEach(key => {
+          if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
+            payload.append(key, formData[key]);
+          }
+        });
+        if (editEmployee) {
+          payload.append('_method', 'PUT'); // Laravel requirement for multipart PUT requests
+        }
+      }
+
       if (editEmployee) {
-        await api.put(`/admin/employees/${editEmployee.id}`, formData);
+        // If it's multipart, we send as POST with _method=PUT to Laravel
+        if (payload instanceof FormData) {
+          await api.post(`/admin/employees/${editEmployee.id}`, payload);
+        } else {
+          await api.put(`/admin/employees/${editEmployee.id}`, payload);
+        }
       } else {
-        await api.post('/admin/employees', formData);
+        await api.post('/admin/employees', payload);
       }
       fetchEmployees(searchQuery);
       closeModal();
@@ -212,54 +238,85 @@ export default function EmployeesPage() {
       {/* ADD / EDIT MODAL */}
       {modalOpen && createPortal(
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
-          <div className="modal">
+          <div className="modal" style={{ maxWidth: '850px', width: '90%' }}>
             <h2>{editEmployee ? 'Edit Employee' : 'Add New Employee'}</h2>
 
-            {!editEmployee && (
-              <div className="form-group">
-                <label>Email * <span style={{fontSize:'0.75rem', color:'var(--text-secondary)', fontWeight:'400'}}>(must be a registered account)</span></label>
-                <input type="email" placeholder="e.g. ahmed@safetywatch.com"
-                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
-                <p style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'0.3rem'}}>
-                  ⚠️ The user must have an existing account. New accounts are created via Sign Up.
-                </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
+              
+              {/* Left Side: Employee Details */}
+              <div style={{ flex: '1 1 300px' }}>
+                {!editEmployee && (
+                  <div className="form-group">
+                    <label>Email * <span style={{fontSize:'0.75rem', color:'var(--text-secondary)', fontWeight:'400'}}>(must be a registered account)</span></label>
+                    <input type="email" placeholder="e.g. ahmed@safetywatch.com"
+                      value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                    <p style={{fontSize:'0.75rem', color:'var(--text-secondary)', marginTop:'0.3rem'}}>
+                      The user must have an existing account. New accounts are created via Sign Up.
+                    </p>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Department *</label>
+                  <input type="text" placeholder="e.g. Software Engineering"
+                    value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} />
+                </div>
+
+                <div className="form-group">
+                  <label>Position *</label>
+                  <input type="text" placeholder="e.g. Backend Developer"
+                    value={formData.position} onChange={(e) => setFormData({...formData, position: e.target.value})} />
+                </div>
+
+                <div className="form-group">
+                  <label>Join Date *</label>
+                  <input type="date" value={formData.join_date}
+                    onChange={(e) => setFormData({...formData, join_date: e.target.value})} />
+                </div>
+
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input type="text" placeholder="e.g. +20 1XX XXX XXXX"
+                    value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                </div>
+
+                <div className="form-group">
+                  <label>Status *</label>
+                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="on_leave">On Leave</option>
+                  </select>
+                </div>
               </div>
-            )}
 
-            <div className="form-group">
-              <label>Department *</label>
-              <input type="text" placeholder="e.g. Software Engineering"
-                value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} />
+              {/* Right Side: Photos */}
+              <div style={{ flex: '1 1 300px' }}>
+                <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', height: '100%' }}>
+                  <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Face Recognition Photos {!editEmployee && '*'}</h4>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                    Upload 3 photos of the employee's face for AI attendance tracking. Mandatory for new employees.
+                  </p>
+                  
+                  {['front', 'right', 'left'].map((side) => (
+                    <div key={side} className="form-group" style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ textTransform: 'capitalize', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
+                        {side} Face Photo {!editEmployee && '*'}
+                      </label>
+                      <label className="btn-file-upload">
+                        {formData[`photo_${side}`] ? formData[`photo_${side}`].name : `Choose Image`}
+                        <input type="file" accept="image/jpeg, image/png, image/jpg" 
+                          style={{ display: 'none' }}
+                          onChange={(e) => setFormData({...formData, [`photo_${side}`]: e.target.files[0]})} />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
 
-            <div className="form-group">
-              <label>Position *</label>
-              <input type="text" placeholder="e.g. Backend Developer"
-                value={formData.position} onChange={(e) => setFormData({...formData, position: e.target.value})} />
-            </div>
-
-            <div className="form-group">
-              <label>Join Date *</label>
-              <input type="date" value={formData.join_date}
-                onChange={(e) => setFormData({...formData, join_date: e.target.value})} />
-            </div>
-
-            <div className="form-group">
-              <label>Phone</label>
-              <input type="text" placeholder="e.g. +20 1XX XXX XXXX"
-                value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
-            </div>
-
-            <div className="form-group">
-              <label>Status *</label>
-              <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="on_leave">On Leave</option>
-              </select>
-            </div>
-
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ marginTop: '2rem' }}>
               <button className="btn-cancel" onClick={closeModal} disabled={isSaving}>Cancel</button>
               <button className="btn-save" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : (editEmployee ? 'Save Changes' : 'Add Employee')}

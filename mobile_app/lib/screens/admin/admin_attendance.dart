@@ -8,7 +8,11 @@ import '../../widgets/status_badge.dart';
 import '../../widgets/loading_shimmer.dart';
 import '../../providers/attendance_provider.dart';
 import 'package:intl/intl.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/network/api_constants.dart';
+import '../../core/storage/secure_storage_service.dart';
 class AdminAttendanceScreen extends ConsumerStatefulWidget {
   const AdminAttendanceScreen({super.key});
 
@@ -92,6 +96,87 @@ class _AdminAttendanceScreenState
     }
   }
 
+  Future<void> _faceScan(String actionType) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 70,
+    );
+
+    if (image == null) return;
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+      
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(image.path, filename: 'scan.jpg'),
+      });
+
+      final recRes = await dio.post(ApiConstants.runpodFaceApi, data: formData);
+      if (recRes.statusCode == 200 && recRes.data['recognized'] == true) {
+        final employeeCode = recRes.data['employee_code'];
+        final token = await ref.read(secureStorageProvider).getToken();
+
+        final logRes = await dio.post(
+          '${ApiConstants.baseUrl}/api/admin/attendance/log-via-face',
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          ),
+          data: {'employee_code': employeeCode, 'action': actionType},
+        );
+
+        Navigator.pop(context); // hide loading
+        if (logRes.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(logRes.data['message'])),
+          );
+          ref.read(adminAttendanceProvider.notifier).fetch();
+        }
+      } else {
+        Navigator.pop(context); // hide loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Face not recognized.')),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // hide loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Could not connect to AI server. Please check your connection or try again later.',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -125,6 +210,16 @@ class _AdminAttendanceScreenState
                               TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
+                ),
+                IconButton(
+                  onPressed: () => _faceScan('check_in'),
+                  icon: const Icon(Icons.login, size: 24, color: AppColors.success),
+                  tooltip: "Scan Face Check-In",
+                ),
+                IconButton(
+                  onPressed: () => _faceScan('check_out'),
+                  icon: const Icon(Icons.logout, size: 24, color: AppColors.error),
+                  tooltip: "Scan Face Check-Out",
                 ),
                 IconButton(
                   onPressed: state.records.isEmpty ? null : _exportCsv,

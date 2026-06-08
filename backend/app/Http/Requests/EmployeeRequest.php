@@ -28,6 +28,9 @@ class EmployeeRequest extends FormRequest
             'shift_end'      => 'nullable|date_format:H:i',
             'late_threshold' => 'nullable|integer|min:0|max:60',
             'status'         => 'nullable|in:active,inactive,on_leave',
+            'photo_front'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'photo_left'     => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'photo_right'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }
 

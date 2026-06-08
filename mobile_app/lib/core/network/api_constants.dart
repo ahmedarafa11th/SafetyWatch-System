@@ -1,8 +1,7 @@
 class ApiConstants {
   // Default base URL — override at app startup via setBaseUrl()
-  // For Android emulator: 'http://10.0.2.2:8000'
-  // For physical device on same network: 'http://192.168.x.x:8000'
-  static String _baseUrl = 'http://192.168.1.4:8002';
+  // Cloud backend deployed on Fly.io
+  static String _baseUrl = 'https://safetywatch-api.fly.dev';
 
   static String get baseUrl => _baseUrl;
 
@@ -10,6 +9,9 @@ class ApiConstants {
   static void setBaseUrl(String url) {
     _baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
+
+  // AI API URL (RunPod or Local Docker)
+  static const String runpodFaceApi = 'http://192.168.1.4:8000/api/recognize';
 
   // Auth
   static const String login = '/api/auth/login';

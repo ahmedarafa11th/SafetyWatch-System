@@ -10,6 +10,8 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class EmployeeController extends Controller
 {
@@ -54,13 +56,18 @@ class EmployeeController extends Controller
             );
         }
 
-        // التحقق أن المستخدم مش عنده Employee Profile بالفعل (في أي نظام)
+        // Check if the user already has an active Employee Profile
         $existingEmployee = Employee::withoutGlobalScopes()->where('user_id', $user->id)->first();
         if ($existingEmployee) {
-            return $this->error(
-                'This employee is already registered with another admin.',
-                422
-            );
+            if ($existingEmployee->trashed()) {
+                // Previously deleted — hard-delete the old record so we can create a fresh one
+                $existingEmployee->forceDelete();
+            } else {
+                return $this->error(
+                    'This employee is already registered with another admin.',
+                    422
+                );
+            }
         }
 
         DB::beginTransaction();
@@ -89,6 +96,45 @@ class EmployeeController extends Controller
             ]);
 
             DB::commit();
+
+            // Save and Forward photos to Runpod Face Recognition API
+            if ($request->hasFile('photo_front')) {
+                try {
+                    $path = "public/faces/{$employee->employee_code}";
+                    
+                    // Save locally
+                    $request->file('photo_front')->storeAs($path, 'front.jpg');
+                    if ($request->hasFile('photo_left')) $request->file('photo_left')->storeAs($path, 'left.jpg');
+                    if ($request->hasFile('photo_right')) $request->file('photo_right')->storeAs($path, 'right.jpg');
+
+                    // Only forward to the AI service if it's explicitly configured
+                    $aiUrl = env('FACE_RECOGNITION_API_URL');
+                    if ($aiUrl) {
+                        $runpodUrl = $aiUrl . '/api/register';
+
+                        $httpReq = Http::timeout(5)->asMultipart()
+                            ->attach('photo_front', file_get_contents($request->file('photo_front')->getRealPath()), $request->file('photo_front')->getClientOriginalName());
+
+                        if ($request->hasFile('photo_left')) {
+                            $httpReq->attach('photo_left', file_get_contents($request->file('photo_left')->getRealPath()), $request->file('photo_left')->getClientOriginalName());
+                        }
+                        if ($request->hasFile('photo_right')) {
+                            $httpReq->attach('photo_right', file_get_contents($request->file('photo_right')->getRealPath()), $request->file('photo_right')->getClientOriginalName());
+                        }
+
+                        $httpReq->post($runpodUrl, [
+                            'name' => $user->name,
+                            'employee_code' => $employee->employee_code,
+                        ]);
+                    } else {
+                        Log::info("AI Face Recognition service not configured. Photos saved locally only.");
+                    }
+                } catch (\Exception $apiException) {
+                    Log::error("Failed to register face with AI API: " . $apiException->getMessage());
+                    // We don't rollback the employee creation if AI sync fails, just log it.
+                }
+            }
+
             return $this->success($employee->load('user'), 'Employee linked and account activated successfully', 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -101,9 +147,13 @@ class EmployeeController extends Controller
     {
         DB::beginTransaction();
         try {
-            $employee->user->update(['name' => $request->name]);
+            if ($request->has('name')) {
+                $employee->user->update(['name' => $request->name]);
+            }
 
-            $employee->update([
+            // Only update fields that are actually present in the request
+            // to avoid setting NOT NULL columns to null
+            $updateData = array_filter([
                 'department'     => $request->department,
                 'position'       => $request->position,
                 'join_date'      => $request->join_date,
@@ -112,7 +162,41 @@ class EmployeeController extends Controller
                 'shift_end'      => $request->shift_end,
                 'late_threshold' => $request->late_threshold,
                 'status'         => $request->status,
-            ]);
+            ], fn($value) => $value !== null);
+
+            $employee->update($updateData);
+
+            // Handle photo uploads on edit
+            if ($request->hasFile('photo_front')) {
+                try {
+                    $path = "public/faces/{$employee->employee_code}";
+                    $request->file('photo_front')->storeAs($path, 'front.jpg');
+                    if ($request->hasFile('photo_left')) $request->file('photo_left')->storeAs($path, 'left.jpg');
+                    if ($request->hasFile('photo_right')) $request->file('photo_right')->storeAs($path, 'right.jpg');
+
+                    // Only forward to the AI service if it's explicitly configured
+                    $aiUrl = env('FACE_RECOGNITION_API_URL');
+                    if ($aiUrl) {
+                        $runpodUrl = $aiUrl . '/api/register';
+                        $httpReq = Http::timeout(5)->asMultipart()
+                            ->attach('photo_front', file_get_contents($request->file('photo_front')->getRealPath()), $request->file('photo_front')->getClientOriginalName());
+                        if ($request->hasFile('photo_left')) {
+                            $httpReq->attach('photo_left', file_get_contents($request->file('photo_left')->getRealPath()), $request->file('photo_left')->getClientOriginalName());
+                        }
+                        if ($request->hasFile('photo_right')) {
+                            $httpReq->attach('photo_right', file_get_contents($request->file('photo_right')->getRealPath()), $request->file('photo_right')->getClientOriginalName());
+                        }
+                        $httpReq->post($runpodUrl, [
+                            'name' => $employee->user->name,
+                            'employee_code' => $employee->employee_code,
+                        ]);
+                    } else {
+                        Log::info("AI Face Recognition service not configured. Photos saved locally only.");
+                    }
+                } catch (\Exception $apiException) {
+                    Log::error("Failed to update face with AI API: " . $apiException->getMessage());
+                }
+            }
 
             DB::commit();
             return $this->success($employee->load('user'), 'Employee updated successfully');
@@ -125,10 +209,17 @@ class EmployeeController extends Controller
     // DELETE /api/admin/employees/{id}
     public function destroy(Employee $employee)
     {
-        // خزّن الـ user قبل ما نعمل delete للـ employee
         $user = $employee->user;
-        $employee->delete(); // softDelete للـ employee أولاً
-        $user?->delete();    // بعدين softDelete للـ user
-        return $this->success(null, 'Employee deleted successfully');
+
+        // Only soft-delete the employee profile, NOT the user account.
+        // Deleting the user makes it impossible to login or re-register.
+        // Instead, deactivate the user so the admin can re-add them later.
+        $employee->delete();
+
+        if ($user) {
+            $user->update(['is_active' => false]);
+        }
+
+        return $this->success(null, 'Employee removed successfully');
     }
 }

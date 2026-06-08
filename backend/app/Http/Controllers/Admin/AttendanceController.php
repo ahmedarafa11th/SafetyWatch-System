@@ -90,6 +90,64 @@ class AttendanceController extends Controller
         ]);
     }
 
+    // POST /api/admin/attendance/log-via-face
+    public function logViaFace(Request $request)
+    {
+        $request->validate([
+            'employee_code' => 'required|exists:employees,employee_code',
+            'action'        => 'nullable|in:check_in,check_out'
+        ]);
+
+        $employee = Employee::where('employee_code', $request->employee_code)->first();
+        $date = now()->format('Y-m-d');
+        $time = now()->format('H:i');
+        $action = $request->action; // 'check_in' or 'check_out'
+
+        $attendance = Attendance::where('employee_id', $employee->id)->where('date', $date)->first();
+
+        // Handle explicitly requested Check In
+        if ($action === 'check_in' || (!$action && !$attendance)) {
+            if ($attendance && $attendance->check_in) {
+                return $this->success($attendance, 'You are already checked in for today!');
+            }
+
+            $shiftStart = \Carbon\Carbon::parse($employee->shift_start);
+            $actualStart = \Carbon\Carbon::parse($time);
+            $lateMinutes = $actualStart->diffInMinutes($shiftStart, false); 
+            
+            $status = ($lateMinutes < -($employee->late_threshold ?? 15)) ? 'late' : 'present';
+
+            $attendance = Attendance::create([
+                'employee_id'      => $employee->id,
+                'date'             => $date,
+                'check_in'         => $time,
+                'status'           => $status,
+                'check_in_source'  => 'face_recognition',
+                'notes'            => 'Auto-logged via Face Recognition'
+            ]);
+
+            return $this->success($attendance, "{$employee->user->name} Checked IN via Face Recognition");
+        }
+
+        // Handle explicitly requested Check Out
+        if ($action === 'check_out' || (!$action && $attendance)) {
+            if (!$attendance || !$attendance->check_in) {
+                return $this->success(null, 'Cannot check out without checking in first!');
+            }
+
+            $checkInTime = \Carbon\Carbon::parse("$date " . $attendance->check_in);
+            if (now()->diffInMinutes($checkInTime) > 5) {
+                $attendance->update([
+                    'check_out'        => $time,
+                    'check_out_source' => 'face_recognition',
+                    'total_hours'      => $this->calcHours($attendance->check_in, $time, $date),
+                ]);
+                return $this->success($attendance, "{$employee->user->name} Checked OUT via Face Recognition");
+            }
+            return $this->success($attendance, 'Face recognized (Cooldown active)');
+        }
+    }
+
     private function getTodayRate(): float
     {
         $total   = Employee::active()->count();

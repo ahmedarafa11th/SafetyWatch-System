@@ -13,13 +13,15 @@ function ProtectedRoute({ children, role }) {
 }
 
 export default function App() {
+  const { user } = useAuth();
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route element={<AuthPortalPage />}>
+      <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/dashboard' : '/my-dashboard'} /> : <LandingPage />} />
+      <Route element={user ? <Navigate to={user.role === 'admin' ? '/dashboard' : '/my-dashboard'} /> : <AuthPortalPage />}>
         <Route path="/login" element={null} />
         <Route path="/signup" element={null} />
       </Route>
+
       
       <Route
         element={

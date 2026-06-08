@@ -116,7 +116,7 @@ export default function SecurityAlertsPage() {
       {isLoading ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading alerts...</div>
       ) : alerts.length === 0 ? (
-        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No alerts found. System is clear ✓</div>
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No alerts found. System is clear</div>
       ) : (
         <div className="alerts-list">
           {alerts.map((alert) => (

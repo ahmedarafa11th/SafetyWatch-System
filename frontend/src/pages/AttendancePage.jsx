@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import FaceScanModal from '../components/FaceScanModal';
 
 const initialLogs = [
   { date: "2026-02-01", in: "08:45 AM", out: "05:30 PM", hours: 8.75, status: "Present" },
@@ -24,6 +25,8 @@ export default function AttendancePage() {
   const [filterMonth, setFilterMonth] = useState('');
   const [tempMonth, setTempMonth] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFaceScanOpen, setIsFaceScanOpen] = useState(false);
+  const [faceScanAction, setFaceScanAction] = useState('check_in');
 
   const filteredLogs = initialLogs.filter(log => 
     !filterMonth || log.date.startsWith(filterMonth)
@@ -92,6 +95,20 @@ export default function AttendancePage() {
             <p>View your complete attendance history</p>
           </div>
           <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => { setFaceScanAction('check_in'); setIsFaceScanOpen(true); }} style={{ background: 'var(--green)', borderColor: 'var(--green)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+              Check In
+            </button>
+            <button className="btn btn-primary" onClick={() => { setFaceScanAction('check_out'); setIsFaceScanOpen(true); }} style={{ background: 'var(--red)', borderColor: 'var(--red)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+              Check Out
+            </button>
             <button className="btn btn-outline" onClick={() => setIsModalOpen(true)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
@@ -178,6 +195,14 @@ export default function AttendancePage() {
           </table>
         </div>
       </main>
+
+      {/* FACE SCAN MODAL */}
+      <FaceScanModal 
+        isOpen={isFaceScanOpen} 
+        actionType={faceScanAction}
+        onClose={() => setIsFaceScanOpen(false)} 
+        onLogSuccess={(msg) => alert(msg)}
+      />
     </>
   );
 }

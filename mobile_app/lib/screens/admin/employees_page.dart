@@ -8,6 +8,7 @@ import '../../providers/employees_provider.dart';
 import '../../models/employee.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EmployeesPageScreen extends ConsumerStatefulWidget {
   const EmployeesPageScreen({super.key});
@@ -51,6 +52,7 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
           final isSaving = ref.watch(employeesProvider).isSaving;
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return AlertDialog(
             title: Text(isEdit ? "Edit Employee" : "Add New Employee"),
             content: SingleChildScrollView(
@@ -131,6 +133,42 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
                     ],
                     onChanged: (v) => setDialogState(() => form.status = v!),
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Face Recognition Photos ${!isEdit ? '*' : ''}", 
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        const Text("Required for AI attendance. Select up to 3 photos.", 
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 12),
+                        _buildPhotoPicker(
+                          label: "Front Face *", 
+                          file: form.photoFront, 
+                          onPicked: (f) => setDialogState(() => form.photoFront = f)
+                        ),
+                        const SizedBox(height: 8),
+                        _buildPhotoPicker(
+                          label: "Right Face *", 
+                          file: form.photoRight, 
+                          onPicked: (f) => setDialogState(() => form.photoRight = f)
+                        ),
+                        const SizedBox(height: 8),
+                        _buildPhotoPicker(
+                          label: "Left Face *", 
+                          file: form.photoLeft, 
+                          onPicked: (f) => setDialogState(() => form.photoLeft = f)
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -143,6 +181,12 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
                 onPressed: isSaving
                     ? null
                     : () async {
+                        if (!isEdit && (form.photoFront == null || form.photoLeft == null || form.photoRight == null)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('All 3 Face Recognition Photos are required.'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
                         bool success;
                         if (isEdit) {
                           success = await ref
@@ -172,6 +216,42 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPhotoPicker({required String label, required XFile? file, required Function(XFile?) onPicked}) {
+    return InkWell(
+      onTap: () async {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(source: ImageSource.gallery);
+        if (picked != null) {
+          onPicked(picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.withAlpha(80)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.image, size: 20, color: file != null ? AppColors.primary : Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                file != null ? file.name : "Choose Image",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: file != null ? null : Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

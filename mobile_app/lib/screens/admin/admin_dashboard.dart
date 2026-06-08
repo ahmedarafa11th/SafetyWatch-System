@@ -182,7 +182,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               state.isLoading
                   ? _loadingWidget()
                   : state.recentAlerts.isEmpty
-                      ? _emptyWidget("No active alerts. System is clear ✓")
+                      ? _emptyWidget("No active alerts. System is clear")
                       : Column(
                           children: state.recentAlerts
                               .map(

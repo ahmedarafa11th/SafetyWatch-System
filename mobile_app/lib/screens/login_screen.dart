@@ -271,27 +271,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           const SizedBox(height: 8),
 
-                          // Remember Me Checkbox
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: rememberMe,
-                                onChanged: (value) {
-                                  setState(() => rememberMe = value ?? false);
-                                },
-                                activeColor: AppColors.primary,
-                              ),
-                              Text(
-                                "Remember me",
-                                style: TextStyle(
-                                  color: isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
 
                           // Sign In button
                           SizedBox(

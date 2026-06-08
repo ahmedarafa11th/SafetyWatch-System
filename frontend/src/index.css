@@ -2238,3 +2238,38 @@ footer {
 .logo-dark-img {
   display: var(--logo-dark-display) !important;
 }
+
+/* Checkbox styling */
+input[type="checkbox"].custom-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #8c98a9; /* Soft bluish-gray border */
+  border-radius: 4px;
+  background-color: transparent !important;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin: 0;
+}
+input[type="checkbox"].custom-checkbox:hover {
+  border-color: var(--accent);
+}
+input[type="checkbox"].custom-checkbox:checked {
+  background-color: var(--accent) !important;
+  border-color: var(--accent);
+}
+input[type="checkbox"].custom-checkbox:checked::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}

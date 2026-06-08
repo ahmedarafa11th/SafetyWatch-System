@@ -1,0 +1,179 @@
+# flyctl launch added from bootstrap/cache/.gitignore
+bootstrap/cache/**/*
+!bootstrap/cache/**/.gitignore
+
+# flyctl launch added from safety-watch/.gitignore
+safety-watch/**/*.log
+safety-watch/**/.DS_Store
+safety-watch/**/.env
+safety-watch/**/.env.backup
+safety-watch/**/.env.production
+safety-watch/**/.phpactor.json
+safety-watch/**/.phpunit.result.cache
+safety-watch/.codex
+safety-watch/.cursor
+safety-watch/.idea
+safety-watch/.nova
+safety-watch/.phpunit.cache
+safety-watch/.vscode
+safety-watch/.zed
+safety-watch/auth.json
+safety-watch/node_modules
+safety-watch/public/build
+safety-watch/public/fonts-manifest.dev.json
+safety-watch/public/hot
+safety-watch/public/storage
+safety-watch/storage/*.key
+safety-watch/storage/pail
+safety-watch/vendor
+safety-watch/**/_ide_helper.php
+safety-watch/**/Homestead.json
+safety-watch/**/Homestead.yaml
+safety-watch/**/Thumbs.db
+
+# flyctl launch added from safety-watch/bootstrap/cache/.gitignore
+safety-watch/bootstrap/cache/**/*
+!safety-watch/bootstrap/cache/**/.gitignore
+
+# flyctl launch added from safety-watch/database/.gitignore
+safety-watch/database/**/*.sqlite*
+
+# flyctl launch added from safety-watch/storage/app/.gitignore
+safety-watch/storage/app/**/*
+!safety-watch/storage/app/**/private
+!safety-watch/storage/app/**/public
+!safety-watch/storage/app/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/app/private/.gitignore
+safety-watch/storage/app/private/**/*
+!safety-watch/storage/app/private/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/app/public/.gitignore
+safety-watch/storage/app/public/**/*
+!safety-watch/storage/app/public/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/framework/.gitignore
+safety-watch/storage/framework/**/compiled.php
+safety-watch/storage/framework/**/config.php
+safety-watch/storage/framework/**/down
+safety-watch/storage/framework/**/events.scanned.php
+safety-watch/storage/framework/**/maintenance.php
+safety-watch/storage/framework/**/routes.php
+safety-watch/storage/framework/**/routes.scanned.php
+safety-watch/storage/framework/**/schedule-*
+safety-watch/storage/framework/**/services.json
+
+# flyctl launch added from safety-watch/storage/framework/cache/.gitignore
+safety-watch/storage/framework/cache/**/*
+!safety-watch/storage/framework/cache/**/data
+!safety-watch/storage/framework/cache/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/framework/cache/data/.gitignore
+safety-watch/storage/framework/cache/data/**/*
+!safety-watch/storage/framework/cache/data/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/framework/sessions/.gitignore
+safety-watch/storage/framework/sessions/**/*
+!safety-watch/storage/framework/sessions/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/framework/testing/.gitignore
+safety-watch/storage/framework/testing/**/*
+!safety-watch/storage/framework/testing/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/framework/views/.gitignore
+safety-watch/storage/framework/views/**/*
+!safety-watch/storage/framework/views/**/.gitignore
+
+# flyctl launch added from safety-watch/storage/logs/.gitignore
+safety-watch/storage/logs/**/*
+!safety-watch/storage/logs/**/.gitignore
+
+# flyctl launch added from safety-watch/vendor/hamcrest/hamcrest-php/.gitignore
+safety-watch/vendor/hamcrest/hamcrest-php/**/composer.lock
+safety-watch/vendor/hamcrest/hamcrest-php/**/tests/.phpunit.result.cache
+safety-watch/vendor/hamcrest/hamcrest-php/**/vendor
+
+# flyctl launch added from safety-watch/vendor/mockery/mockery/docs/.gitignore
+safety-watch/vendor/mockery/mockery/docs/**/_build
+
+# flyctl launch added from safety-watch/vendor/psr/container/.gitignore
+safety-watch/vendor/psr/container/**/composer.lock
+safety-watch/vendor/psr/container/**/composer.phar
+safety-watch/vendor/psr/container/vendor
+
+# flyctl launch added from safety-watch/vendor/psr/event-dispatcher/.gitignore
+safety-watch/vendor/psr/event-dispatcher/vendor
+safety-watch/vendor/psr/event-dispatcher/**/composer.lock
+
+# flyctl launch added from storage/app/.gitignore
+storage/app/**/*
+!storage/app/**/public
+!storage/app/**/.gitignore
+
+# flyctl launch added from storage/app/public/.gitignore
+storage/app/public/**/*
+!storage/app/public/**/.gitignore
+
+# flyctl launch added from storage/framework/.gitignore
+storage/framework/**/compiled.php
+storage/framework/**/config.php
+storage/framework/**/down
+storage/framework/**/events.scanned.php
+storage/framework/**/maintenance.php
+storage/framework/**/routes.php
+storage/framework/**/routes.scanned.php
+storage/framework/**/schedule-*
+storage/framework/**/services.json
+
+# flyctl launch added from storage/framework/cache/.gitignore
+storage/framework/cache/**/*
+!storage/framework/cache/**/data
+!storage/framework/cache/**/.gitignore
+
+# flyctl launch added from storage/framework/cache/data/.gitignore
+storage/framework/cache/data/**/*
+!storage/framework/cache/data/**/.gitignore
+
+# flyctl launch added from storage/framework/sessions/.gitignore
+storage/framework/sessions/**/*
+!storage/framework/sessions/**/.gitignore
+
+# flyctl launch added from storage/framework/testing/.gitignore
+storage/framework/testing/**/*
+!storage/framework/testing/**/.gitignore
+
+# flyctl launch added from storage/framework/views/.gitignore
+storage/framework/views/**/*
+!storage/framework/views/**/.gitignore
+
+# flyctl launch added from storage/logs/.gitignore
+storage/logs/**/*
+!storage/logs/**/.gitignore
+
+# flyctl launch added from vendor/hamcrest/hamcrest-php/.gitignore
+vendor/hamcrest/hamcrest-php/**/composer.lock
+vendor/hamcrest/hamcrest-php/**/tests/.phpunit.result.cache
+vendor/hamcrest/hamcrest-php/**/vendor
+
+# flyctl launch added from vendor/mockery/mockery/docs/.gitignore
+vendor/mockery/mockery/docs/**/_build
+
+# flyctl launch added from vendor/psr/container/.gitignore
+vendor/psr/container/**/composer.lock
+vendor/psr/container/**/composer.phar
+vendor/psr/container/vendor
+
+# flyctl launch added from vendor/psr/event-dispatcher/.gitignore
+vendor/psr/event-dispatcher/vendor
+vendor/psr/event-dispatcher/**/composer.lock
+
+# flyctl launch added from vendor/spatie/ignition/resources/compiled/.gitignore
+vendor/spatie/ignition/resources/compiled/**/*
+!vendor/spatie/ignition/resources/compiled/**/.gitignore
+!vendor/spatie/ignition/resources/compiled/**/ignition.css
+!vendor/spatie/ignition/resources/compiled/**/ignition.js
+fly.toml
+
+# Exclude local .env so Fly.io env vars (fly.toml) take effect
+.env
+.env.*
