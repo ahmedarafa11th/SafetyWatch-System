@@ -43,8 +43,10 @@ function DashboardContent() {
   return (
     <>
       <div className="page-header">
-        <h1>My Dashboard</h1>
-        <p>Welcome back, {user?.name || 'Employee'}</p>
+        <div className="page-title">
+          <h1>My Dashboard</h1>
+          <p>Welcome back, {user?.name || 'Employee'}</p>
+        </div>
       </div>
 
       <div className="stats-grid">
