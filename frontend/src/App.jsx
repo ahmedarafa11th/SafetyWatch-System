@@ -47,6 +47,8 @@ export default function App() {
         <Route path="/my-dashboard" element={null} />
         <Route path="/attendance" element={null} />
       </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
