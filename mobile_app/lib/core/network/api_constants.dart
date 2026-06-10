@@ -1,7 +1,6 @@
 class ApiConstants {
   // Default base URL — override at app startup via setBaseUrl()
-  // Cloud backend deployed on Fly.io
-  static String _baseUrl = 'https://safetywatch-api.fly.dev';
+  static String _baseUrl = 'https://141.144.238.112.nip.io';
 
   static String get baseUrl => _baseUrl;
 

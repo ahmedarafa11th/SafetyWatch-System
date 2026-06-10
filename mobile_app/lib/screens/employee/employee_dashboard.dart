@@ -44,11 +44,11 @@ class _EmployeeDashboardScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header with name
-            Text("Welcome back, $userName",
-                style: const TextStyle(
+            const Text("My Dashboard",
+                style: TextStyle(
                     fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text("Track your attendance and work statistics",
+            Text("Welcome back, $userName",
                 style: TextStyle(color: secondaryText, fontSize: 14)),
             const SizedBox(height: 20),
 
