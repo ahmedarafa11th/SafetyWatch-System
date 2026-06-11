@@ -180,6 +180,27 @@ streams_lock = threading.Lock()    # Protects the active_streams dictionary
 # State
 active_streams = {}  # { camera_id: {"thread": Thread, "is_streaming": True} }
 
+TELEMETRY_URL = f"{LARAVEL_API_URL}/api/ai/telemetry"
+
+def send_telemetry(camera_id: int, score: float):
+    """Send live violence score to the Laravel backend for the dashboard bar."""
+    try:
+        payload = {
+            "camera_id": camera_id,
+            "violence_score": float(score)
+        }
+        headers = {
+            "Authorization": f"Bearer {API_TOKEN}",
+            "Accept": "application/json"
+        }
+        # Short timeout because telemetry shouldn't block the stream thread
+        response = requests.post(TELEMETRY_URL, json=payload, headers=headers, timeout=2)
+        if response.status_code == 401:
+            auto_refresh_token()
+    except Exception:
+        # Silently fail telemetry on timeout to avoid spamming the console
+        pass
+
 def trigger_webhook(camera_id: int, score: float):
     """Send an alert to the Laravel backend."""
     try:
@@ -262,6 +283,9 @@ def process_stream(camera_id: int, rtsp_url: str):
                 violence_score = float(prediction[0][1])
                 
                 print(f"🔍 Camera {camera_id}: Evaluated {NUM_FRAMES} frames. Violence Score: {violence_score:.2f}")
+                
+                # Send live telemetry to the dashboard
+                send_telemetry(camera_id, violence_score)
                 
                 if violence_score >= THRESHOLD:
                     print(f"⚠️ Camera {camera_id}: VIOLENCE DETECTED! Triggering webhook...")

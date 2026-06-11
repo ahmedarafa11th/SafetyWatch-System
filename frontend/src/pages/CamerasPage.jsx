@@ -132,8 +132,9 @@ function noStreamStyle(height) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CamerasPage() {
   useEffect(() => {
-
     fetchCameras();
+    const interval = setInterval(pollCameras, 1500);
+    return () => clearInterval(interval);
   }, []);
 
   const [cameras, setCameras]     = useState([]);
@@ -158,6 +159,16 @@ export default function CamerasPage() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const pollCameras = async () => {
+    try {
+      const res = await api.get('/admin/cameras');
+      setCameras(res.data.cameras ?? []);
+      setStats(res.data.stats ?? { total: 0, online: 0, offline: 0, total_alerts: 0 });
+    } catch (err) {
+      // silent fail on polling
     }
   };
 
@@ -314,6 +325,28 @@ export default function CamerasPage() {
                   <div className={`feed-badge ${isOnline ? 'live' : 'offline'}`}>
                     <div className="dot"/>{isOnline ? 'LIVE' : 'OFFLINE'}
                   </div>
+
+                  {/* Live AI Violence Telemetry Bar */}
+                  {cam.is_ai_enabled && !cam.is_entrance && isOnline && (
+                    <div style={{ position: 'absolute', bottom: '10px', left: '10px', right: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.9)', letterSpacing: '0.5px' }}>
+                        <span>AI RISK LEVEL</span>
+                        <span style={{ color: (cam.current_violence_score || 0) >= 0.70 ? '#ef4444' : (cam.current_violence_score || 0) >= 0.40 ? '#f59e0b' : '#10b981' }}>
+                          {Math.round((cam.current_violence_score || 0) * 100)}%
+                        </span>
+                      </div>
+                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${(cam.current_violence_score || 0) * 100}%`,
+                          background: (cam.current_violence_score || 0) >= 0.70 ? '#ef4444' : (cam.current_violence_score || 0) >= 0.40 ? '#f59e0b' : '#10b981',
+                          transition: 'width 0.3s ease-out, background 0.3s ease-out',
+                          boxShadow: (cam.current_violence_score || 0) >= 0.70 ? '0 0 8px #ef4444' : 'none'
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 {/* Info */}
