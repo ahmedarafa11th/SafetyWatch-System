@@ -52,7 +52,7 @@ class CameraController extends Controller
             'location'      => 'sometimes|string',
             'status'        => 'sometimes|in:online,offline,maintenance',
             'is_ai_enabled' => 'sometimes|boolean',
-            'ip_address'    => 'nullable|ip',
+            'ip_address'    => 'nullable|string|max:255',
             'stream_url'    => 'nullable|string|max:500',
         ]);
 
