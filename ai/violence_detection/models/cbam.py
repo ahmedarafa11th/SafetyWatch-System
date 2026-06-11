@@ -127,7 +127,10 @@ class TimeDistributedCBAM(layers.Layer):
 
     def call(self, inputs):
         # inputs: (batch, time, h, w, c)
-        return tf.map_fn(self.cbam, inputs)
+        original_dtype = inputs.dtype
+        x = tf.cast(inputs, tf.float32)
+        x = tf.map_fn(self.cbam, x, fn_output_signature=tf.float32)
+        return tf.cast(x, original_dtype)
 
     def get_config(self):
         config = super().get_config()
