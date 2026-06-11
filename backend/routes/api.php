@@ -35,6 +35,13 @@ Route::post('/ai/detection', [DetectionController::class, 'store'])
 */
 Route::middleware('auth:sanctum')->group(function () {
 
+    // Edge AI Integration Routes
+    Route::prefix('ai')->group(function () {
+        Route::get('/cameras', [DetectionController::class, 'getEdgeCameras']);
+        Route::post('/detection', [DetectionController::class, 'store']);
+        Route::post('/telemetry', [DetectionController::class, 'updateTelemetry']);
+    });
+
     // Auth
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

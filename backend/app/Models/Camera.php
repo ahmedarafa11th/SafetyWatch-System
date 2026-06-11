@@ -14,7 +14,7 @@ class Camera extends Model
     protected $fillable = [
         'name', 'location', 'ip_address', 'stream_url',
         'status', 'is_entrance', 'is_ai_enabled',
-        'last_active_at', 'total_alerts',
+        'last_active_at', 'total_alerts', 'current_violence_score'
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class Camera extends Model
         'is_ai_enabled'  => 'boolean',
         'last_active_at' => 'datetime',
         'total_alerts'   => 'integer',
+        'current_violence_score' => 'float',
     ];
 
     public function violations()        { return $this->hasMany(Violation::class); }

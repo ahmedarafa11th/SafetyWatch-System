@@ -85,8 +85,28 @@ class DetectionController extends Controller
     {
         $cameras = Camera::where('status', 'online')
             ->where('is_ai_enabled', true)
-            ->get(['id', 'name', 'stream_url', 'is_entrance']);
+            ->get(['id', 'name', 'stream_url', 'is_entrance', 'current_violence_score']);
 
         return $this->success(['cameras' => $cameras], 'Active Edge Cameras fetched');
+    }
+
+    /**
+     * POST /api/ai/telemetry
+     * Receives live violence scores from Edge Node.
+     */
+    public function updateTelemetry(Request $request)
+    {
+        $request->validate([
+            'camera_id'      => 'required|exists:cameras,id',
+            'violence_score' => 'required|numeric|min:0|max:1',
+        ]);
+
+        Camera::where('id', $request->camera_id)
+            ->update([
+                'current_violence_score' => $request->violence_score,
+                'last_active_at' => now()
+            ]);
+
+        return response()->json(['status' => 'success']);
     }
 }
