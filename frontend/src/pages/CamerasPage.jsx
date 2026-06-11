@@ -133,7 +133,7 @@ function noStreamStyle(height) {
 export default function CamerasPage() {
   useEffect(() => {
     fetchCameras();
-    const interval = setInterval(pollCameras, 1500);
+    const interval = setInterval(pollCameras, 500);
     return () => clearInterval(interval);
   }, []);
 

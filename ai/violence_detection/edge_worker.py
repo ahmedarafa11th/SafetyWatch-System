@@ -291,8 +291,9 @@ def process_stream(camera_id: int, rtsp_url: str):
                     print(f"⚠️ Camera {camera_id}: VIOLENCE DETECTED! Triggering webhook...")
                     trigger_webhook(camera_id, violence_score)
                     time.sleep(5) # Wait 5 seconds to avoid spamming alerts
-            
-            frames_buffer.clear()
+            # Keep the latest 20 frames and discard the oldest 5. 
+            # This makes the AI evaluate every 0.5 seconds (at 30FPS with skip=3) instead of every 2.5 seconds.
+            frames_buffer = frames_buffer[5:]
 
     cap.release()
     print(f"🛑 Camera {camera_id}: Stream processing stopped.")
