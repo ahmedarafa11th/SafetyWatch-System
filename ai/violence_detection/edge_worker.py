@@ -162,7 +162,12 @@ feature_extractor = tf.keras.Model(inputs=base_vgg16.input, outputs=base_vgg16.g
 print("Loading Violence Detection Model...")
 MODEL_PATH = "checkpoints/best_model.keras"
 try:
-    violence_model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+    from models.cbam import TimeDistributedCBAM
+    violence_model = tf.keras.models.load_model(
+        MODEL_PATH, 
+        custom_objects={'TimeDistributedCBAM': TimeDistributedCBAM},
+        compile=False
+    )
     print("✅ Model loaded successfully.")
 except Exception as e:
     print(f"⚠️ Failed to load model from {MODEL_PATH}: {e}")

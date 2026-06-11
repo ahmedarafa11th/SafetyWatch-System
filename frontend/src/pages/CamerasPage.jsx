@@ -33,9 +33,13 @@ function buildStreamUrl(ip) {
 function CameraStream({ url, height = '200px' }) {
   const [failed, setFailed]   = useState(false);
   const [loaded, setLoaded]   = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const isVideo = isVideoFile(url);
 
-  useEffect(() => { setFailed(false); setLoaded(false); }, [url]);
+  useEffect(() => { setFailed(false); setLoaded(false); setRetryCount(0); }, [url]);
+
+  // Bust cache for MJPEG so browser actually retries the connection
+  const activeUrl = isVideo ? url : (url.includes('?') ? `${url}&retry=${retryCount}` : `${url}?retry=${retryCount}`);
 
   if (!url) return (
     <div style={noStreamStyle(height)}>
@@ -49,7 +53,7 @@ function CameraStream({ url, height = '200px' }) {
       <CamIcon />
       <span style={{ fontSize: '12px' }}>Stream unavailable</span>
       <code style={{ fontSize: '10px', color: '#555', wordBreak: 'break-all', padding: '0 12px', textAlign: 'center' }}>{url}</code>
-      <button onClick={() => setFailed(false)}
+      <button onClick={() => { setFailed(false); setRetryCount(c => c + 1); }}
         style={{ fontSize: '11px', padding: '4px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '6px' }}>
         ↺ Retry
       </button>
@@ -69,7 +73,7 @@ function CameraStream({ url, height = '200px' }) {
       {isVideo ? (
         /* ── MP4 / Video file ── */
         <video
-          src={url}
+          src={activeUrl}
           autoPlay
           loop
           muted
@@ -81,7 +85,7 @@ function CameraStream({ url, height = '200px' }) {
       ) : (
         /* ── MJPEG / HTTP image stream ── */
         <img
-          src={url}
+          src={activeUrl}
           alt="Camera Stream"
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: loaded ? 'block' : 'none' }}
           onLoad={() => setLoaded(true)}
