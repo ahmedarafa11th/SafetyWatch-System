@@ -22,7 +22,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
 });
 
-// AI Microservice endpoint — secured by token in middleware
+// AI Microservice endpoints — secured by token in middleware
+Route::get('/ai/cameras', [DetectionController::class, 'getEdgeCameras'])
+    ->middleware('auth:sanctum');
 Route::post('/ai/detection', [DetectionController::class, 'store'])
     ->middleware('auth:sanctum');
 

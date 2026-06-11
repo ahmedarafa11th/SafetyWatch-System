@@ -76,4 +76,17 @@ class DetectionController extends Controller
 
         return $this->success(['log_id' => $log->id, 'action' => 'logged'], 'Detection logged');
     }
+
+    /**
+     * GET /api/ai/cameras
+     * Returns all cameras that the Edge Node should monitor.
+     */
+    public function getEdgeCameras()
+    {
+        $cameras = Camera::where('status', 'online')
+            ->where('is_ai_enabled', true)
+            ->get(['id', 'name', 'stream_url', 'is_entrance']);
+
+        return $this->success(['cameras' => $cameras], 'Active Edge Cameras fetched');
+    }
 }
