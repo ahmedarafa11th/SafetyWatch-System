@@ -73,6 +73,8 @@ def load_or_prompt_config():
     config = {
         "LARAVEL_API_URL": api_url,
         "API_TOKEN": token,
+        "email": email,
+        "password": password,
         "THRESHOLD": 0.70
     }
     
@@ -87,6 +89,30 @@ LARAVEL_API_URL = config_data["LARAVEL_API_URL"]
 WEBHOOK_URL = f"{LARAVEL_API_URL}/api/ai/detection"
 API_TOKEN = config_data["API_TOKEN"]
 THRESHOLD = config_data.get("THRESHOLD", 0.70)
+
+def auto_refresh_token():
+    """Silently re-authenticate and update the global token when it expires."""
+    global API_TOKEN, config_data
+    email = config_data.get("email")
+    password = config_data.get("password")
+    
+    if not email or not password:
+        print("⚠️ No saved credentials found. Delete edge_config.json and re-run to re-login.")
+        return False
+    
+    print("🔄 Token expired. Re-authenticating automatically...")
+    token, error = login_to_backend(LARAVEL_API_URL, email, password)
+    
+    if token:
+        API_TOKEN = token
+        config_data["API_TOKEN"] = token
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config_data, f, indent=4)
+        print("✅ Token refreshed successfully!")
+        return True
+    else:
+        print(f"❌ Auto-refresh failed: {error}")
+        return False
 
 # Frame skipping: only process every Nth frame to avoid GPU bottleneck
 # with multiple cameras. Higher = less GPU load, slightly slower detection.
@@ -165,7 +191,11 @@ def trigger_webhook(camera_id: int, score: float):
         }
         response = requests.post(WEBHOOK_URL, json=payload, headers=headers, timeout=5)
         if response.status_code == 401:
-            print(f"⚠️ Camera {camera_id}: Token expired or invalid! Webhook rejected.")
+            if auto_refresh_token():
+                # Retry with the new token
+                headers["Authorization"] = f"Bearer {API_TOKEN}"
+                response = requests.post(WEBHOOK_URL, json=payload, headers=headers, timeout=5)
+                print(f"🚨 Webhook fired for Camera {camera_id}! Status: {response.status_code}")
         else:
             print(f"🚨 Webhook fired for Camera {camera_id}! Status: {response.status_code}")
     except Exception as e:
@@ -286,7 +316,10 @@ def poll_backend_cameras():
                 print(f"📊 Status: {active_count} camera(s) actively streaming | Next poll in 30s")
                             
             elif response.status_code == 401:
-                print("⚠️ Token expired or invalid! Please restart with a valid token.")
+                if auto_refresh_token():
+                    continue  # Immediately retry with fresh token
+                else:
+                    print("⚠️ Could not refresh token. Will retry in 30s.")
                 
             else:
                 print(f"⚠️ Failed to fetch cameras from Laravel. Status: {response.status_code}")
