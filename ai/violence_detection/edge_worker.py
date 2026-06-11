@@ -10,13 +10,43 @@ from tensorflow.keras.applications.vgg16 import preprocess_input
 
 from configs.config import NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH
 
+import json
+
 # -----------------------------
-# Configuration
+# Configuration & Initialization
 # -----------------------------
-LARAVEL_API_URL = os.environ.get("LARAVEL_API_URL", "http://localhost:8000")
+CONFIG_FILE = "edge_config.json"
+
+def load_or_prompt_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+            
+    print("\n" + "="*50)
+    print("🚀 SafetyWatch Edge Node - First Time Setup")
+    print("="*50)
+    
+    api_url = input("Enter Laravel API URL (e.g. https://141.144.238.112.nip.io): ").strip()
+    api_token = input("Enter your Edge Activation Key (Admin Token): ").strip()
+    
+    config = {
+        "LARAVEL_API_URL": api_url or "http://localhost:8000",
+        "API_TOKEN": api_token,
+        "THRESHOLD": 0.70
+    }
+    
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+        
+    print("\n✅ Configuration saved to edge_config.json!")
+    return config
+
+config_data = load_or_prompt_config()
+LARAVEL_API_URL = config_data["LARAVEL_API_URL"]
 WEBHOOK_URL = f"{LARAVEL_API_URL}/api/ai/detection"
-API_TOKEN = os.environ.get("API_TOKEN", "super-secret-ai-token")
-THRESHOLD = 0.70
+API_TOKEN = config_data["API_TOKEN"]
+THRESHOLD = config_data.get("THRESHOLD", 0.70)
+
 
 # -----------------------------
 # AI Models Loading (Thread Safe)
