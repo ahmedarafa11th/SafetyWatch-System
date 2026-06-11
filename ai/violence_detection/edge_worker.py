@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import json
 import requests
 import threading
 import numpy as np
@@ -10,8 +11,6 @@ from tensorflow.keras.applications.vgg16 import preprocess_input
 
 from configs.config import NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH
 
-import json
-
 # -----------------------------
 # Configuration & Initialization
 # -----------------------------
@@ -20,7 +19,9 @@ CONFIG_FILE = "edge_config.json"
 def load_or_prompt_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
+            config = json.load(f)
+            print(f"✅ Configuration loaded from {CONFIG_FILE}")
+            return config
             
     print("\n" + "="*50)
     print("🚀 SafetyWatch Edge Node - First Time Setup")
@@ -47,11 +48,48 @@ WEBHOOK_URL = f"{LARAVEL_API_URL}/api/ai/detection"
 API_TOKEN = config_data["API_TOKEN"]
 THRESHOLD = config_data.get("THRESHOLD", 0.70)
 
+# Frame skipping: only process every Nth frame to avoid GPU bottleneck
+# with multiple cameras. Higher = less GPU load, slightly slower detection.
+FRAME_SKIP = 3
+
+# -----------------------------
+# Startup Validation
+# -----------------------------
+def validate_connection():
+    """Verify the backend is reachable and the token is valid before starting."""
+    print("\n🔍 Validating connection to backend...")
+    try:
+        headers = {
+            "Authorization": f"Bearer {API_TOKEN}",
+            "Accept": "application/json"
+        }
+        response = requests.get(f"{LARAVEL_API_URL}/api/ai/cameras", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            cameras = data.get("data", {}).get("cameras", [])
+            print(f"✅ Connected to backend successfully! Found {len(cameras)} active camera(s).")
+            return True
+        elif response.status_code == 401:
+            print("❌ ERROR: Invalid or expired Edge Activation Key (Token).")
+            print("   Please delete edge_config.json and re-run the script to enter a new token.")
+            return False
+        else:
+            print(f"❌ ERROR: Backend returned status {response.status_code}")
+            print(f"   URL: {LARAVEL_API_URL}/api/ai/cameras")
+            return False
+    except requests.exceptions.ConnectionError:
+        print(f"❌ ERROR: Cannot reach backend at {LARAVEL_API_URL}")
+        print("   Make sure the server is running and the URL is correct.")
+        return False
+    except Exception as e:
+        print(f"❌ ERROR: Unexpected error during validation: {e}")
+        return False
 
 # -----------------------------
 # AI Models Loading (Thread Safe)
 # -----------------------------
-print("Loading VGG16 Feature Extractor...")
+print("\nLoading VGG16 Feature Extractor...")
 base_vgg16 = VGG16(weights="imagenet", include_top=False, input_shape=(FRAME_HEIGHT, FRAME_WIDTH, 3))
 feature_extractor = tf.keras.Model(inputs=base_vgg16.input, outputs=base_vgg16.get_layer("block5_pool").output)
 
@@ -64,8 +102,9 @@ except Exception as e:
     print(f"⚠️ Failed to load model from {MODEL_PATH}: {e}")
     violence_model = None
 
-# Model inference lock for thread safety
-model_lock = threading.Lock()
+# Thread-safety locks
+model_lock = threading.Lock()      # Protects GPU inference calls
+streams_lock = threading.Lock()    # Protects the active_streams dictionary
 
 # State
 active_streams = {}  # { camera_id: {"thread": Thread, "is_streaming": True} }
@@ -85,7 +124,10 @@ def trigger_webhook(camera_id: int, score: float):
             "Accept": "application/json"
         }
         response = requests.post(WEBHOOK_URL, json=payload, headers=headers, timeout=5)
-        print(f"🚨 Webhook fired for Camera {camera_id}! Status: {response.status_code}")
+        if response.status_code == 401:
+            print(f"⚠️ Camera {camera_id}: Token expired or invalid! Webhook rejected.")
+        else:
+            print(f"🚨 Webhook fired for Camera {camera_id}! Status: {response.status_code}")
     except Exception as e:
         print(f"⚠️ Failed to send webhook for Camera {camera_id}: {e}")
 
@@ -95,17 +137,34 @@ def process_stream(camera_id: int, rtsp_url: str):
     cap = cv2.VideoCapture(rtsp_url)
     if not cap.isOpened():
         print(f"❌ Camera {camera_id}: Could not connect to the video stream.")
-        active_streams[camera_id]["is_streaming"] = False
+        with streams_lock:
+            if camera_id in active_streams:
+                active_streams[camera_id]["is_streaming"] = False
         return
 
+    print(f"✅ Camera {camera_id}: Stream connected successfully!")
     frames_buffer = []
+    frame_counter = 0
     
-    while active_streams.get(camera_id, {}).get("is_streaming", False):
+    while True:
+        # Thread-safe check if we should still be streaming
+        with streams_lock:
+            if not active_streams.get(camera_id, {}).get("is_streaming", False):
+                break
+        
         ret, frame = cap.read()
         if not ret:
             print(f"⚠️ Camera {camera_id}: Stream disconnected. Attempting to reconnect in 5s...")
+            cap.release()
             time.sleep(5)
             cap = cv2.VideoCapture(rtsp_url)
+            if not cap.isOpened():
+                print(f"❌ Camera {camera_id}: Reconnection failed. Will retry...")
+            continue
+        
+        # Frame skipping: only process every Nth frame to reduce GPU load
+        frame_counter += 1
+        if frame_counter % FRAME_SKIP != 0:
             continue
             
         # Preprocess frame
@@ -127,7 +186,7 @@ def process_stream(camera_id: int, rtsp_url: str):
                 
                 violence_score = float(prediction[0][1])
                 
-                print(f"🔍 Camera {camera_id} Evaluated 25 frames. Violence Score: {violence_score:.2f}")
+                print(f"🔍 Camera {camera_id}: Evaluated {NUM_FRAMES} frames. Violence Score: {violence_score:.2f}")
                 
                 if violence_score >= THRESHOLD:
                     print(f"⚠️ Camera {camera_id}: VIOLENCE DETECTED! Triggering webhook...")
@@ -141,7 +200,7 @@ def process_stream(camera_id: int, rtsp_url: str):
 
 def poll_backend_cameras():
     """Continuously poll Laravel for active cameras and manage threads."""
-    print("🔄 Starting Edge Orchestrator Polling...")
+    print("🔄 Starting Edge Orchestrator Polling...\n")
     
     while True:
         try:
@@ -159,29 +218,36 @@ def poll_backend_cameras():
                 vd_cameras = [c for c in cameras if not c.get("is_entrance", False)]
                 vd_camera_ids = [c["id"] for c in vd_cameras]
                 
-                # Start new streams
-                for cam in vd_cameras:
-                    cam_id = cam["id"]
-                    rtsp_url = cam.get("stream_url")
+                with streams_lock:
+                    # Start new streams
+                    for cam in vd_cameras:
+                        cam_id = cam["id"]
+                        rtsp_url = cam.get("stream_url")
+                        
+                        if not rtsp_url:
+                            continue
+                            
+                        if cam_id not in active_streams or not active_streams[cam_id]["is_streaming"]:
+                            print(f"🚀 Starting stream thread for Camera {cam_id}: {cam.get('name', 'Unknown')}")
+                            active_streams[cam_id] = {"is_streaming": True}
+                            t = threading.Thread(target=process_stream, args=(cam_id, rtsp_url), daemon=True)
+                            active_streams[cam_id]["thread"] = t
+                            t.start()
                     
-                    if not rtsp_url:
-                        continue
-                        
-                    if cam_id not in active_streams or not active_streams[cam_id]["is_streaming"]:
-                        print(f"🚀 Starting stream thread for Camera {cam_id}")
-                        active_streams[cam_id] = {"is_streaming": True}
-                        t = threading.Thread(target=process_stream, args=(cam_id, rtsp_url), daemon=True)
-                        active_streams[cam_id]["thread"] = t
-                        t.start()
+                    # Stop removed or disabled streams
+                    for cam_id in list(active_streams.keys()):
+                        if cam_id not in vd_camera_ids:
+                            print(f"🛑 Stopping stream thread for Camera {cam_id} (No longer active)")
+                            active_streams[cam_id]["is_streaming"] = False
+                            del active_streams[cam_id]
+
+                with streams_lock:
+                    active_count = sum(1 for s in active_streams.values() if s["is_streaming"])
+                print(f"📊 Status: {active_count} camera(s) actively streaming | Next poll in 30s")
+                            
+            elif response.status_code == 401:
+                print("⚠️ Token expired or invalid! Please restart with a valid token.")
                 
-                # Stop removed or disabled streams
-                for cam_id in list(active_streams.keys()):
-                    if cam_id not in vd_camera_ids:
-                        print(f"🛑 Stopping stream thread for Camera {cam_id} (No longer active or assigned)")
-                        active_streams[cam_id]["is_streaming"] = False
-                        # Thread will naturally die on next loop iteration
-                        del active_streams[cam_id]
-                        
             else:
                 print(f"⚠️ Failed to fetch cameras from Laravel. Status: {response.status_code}")
                 
@@ -191,11 +257,16 @@ def poll_backend_cameras():
         time.sleep(30) # Poll every 30 seconds
 
 if __name__ == "__main__":
-    print("========================================")
-    print("🛡️ SafetyWatch Edge Node Orchestrator 🛡️")
-    print("========================================")
+    print("="*50)
+    print("🛡️  SafetyWatch Edge Node Orchestrator  🛡️")
+    print("="*50)
     
-    # Start the polling thread
+    # Step 1: Validate connection before doing anything
+    if not validate_connection():
+        print("\n💡 Tip: Delete edge_config.json and re-run to reconfigure.")
+        exit(1)
+    
+    # Step 2: Start the polling thread
     poll_thread = threading.Thread(target=poll_backend_cameras, daemon=True)
     poll_thread.start()
     
@@ -205,6 +276,8 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n🛑 Shutting down Edge Node Orchestrator...")
-        for cam_id in active_streams:
-            active_streams[cam_id]["is_streaming"] = False
+        with streams_lock:
+            for cam_id in active_streams:
+                active_streams[cam_id]["is_streaming"] = False
+        time.sleep(2) # Give threads time to clean up
         print("✅ Shutdown complete.")
