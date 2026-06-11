@@ -16,6 +16,29 @@ from configs.config import NUM_FRAMES, FRAME_HEIGHT, FRAME_WIDTH
 # -----------------------------
 CONFIG_FILE = "edge_config.json"
 
+def login_to_backend(api_url, email, password):
+    """Authenticate with the Laravel backend using email/password and return a token."""
+    try:
+        response = requests.post(f"{api_url}/api/auth/login", json={
+            "email": email,
+            "password": password
+        }, headers={"Accept": "application/json"}, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get("data", {}).get("token") or data.get("token")
+            if token:
+                return token, None
+            return None, "Login succeeded but no token was returned."
+        elif response.status_code == 401 or response.status_code == 422:
+            return None, "Invalid email or password. Please try again."
+        else:
+            return None, f"Server returned status {response.status_code}"
+    except requests.exceptions.ConnectionError:
+        return None, f"Cannot reach server at {api_url}. Check the address and try again."
+    except Exception as e:
+        return None, str(e)
+
 def load_or_prompt_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
@@ -26,20 +49,37 @@ def load_or_prompt_config():
     print("\n" + "="*50)
     print("🚀 SafetyWatch Edge Node - First Time Setup")
     print("="*50)
+    print("Enter your SafetyWatch admin credentials below.\n")
     
-    api_url = input("Enter Laravel API URL (e.g. https://141.144.238.112.nip.io): ").strip()
-    api_token = input("Enter your Edge Activation Key (Admin Token): ").strip()
+    api_url = input("Server Address (e.g. https://141.144.238.112.nip.io): ").strip().rstrip("/")
+    if not api_url:
+        api_url = "http://localhost:8000"
+    
+    # Login loop - keep asking until credentials are correct
+    while True:
+        email = input("Admin Email: ").strip()
+        password = input("Password: ").strip()
+        
+        print("\n🔄 Logging in...")
+        token, error = login_to_backend(api_url, email, password)
+        
+        if token:
+            print("✅ Login successful!")
+            break
+        else:
+            print(f"❌ {error}")
+            print("Please try again.\n")
     
     config = {
-        "LARAVEL_API_URL": api_url or "http://localhost:8000",
-        "API_TOKEN": api_token,
+        "LARAVEL_API_URL": api_url,
+        "API_TOKEN": token,
         "THRESHOLD": 0.70
     }
     
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
         
-    print("\n✅ Configuration saved to edge_config.json!")
+    print("✅ Configuration saved! You won't need to enter this again.\n")
     return config
 
 config_data = load_or_prompt_config()
