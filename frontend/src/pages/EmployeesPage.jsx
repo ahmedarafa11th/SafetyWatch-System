@@ -15,6 +15,7 @@ export default function EmployeesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState(null); // null = add, object = edit
   const [isSaving, setIsSaving] = useState(false);
+  const [showTimeInputs, setShowTimeInputs] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '', email: '', department: '',
@@ -278,6 +279,47 @@ export default function EmployeesPage() {
                   <label>Phone</label>
                   <input type="text" placeholder="e.g. +20 1XX XXX XXXX"
                     value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                </div>
+
+                <div className="form-group" style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showTimeInputs ? '1rem' : '0' }}>
+                    <label style={{ margin: 0 }}>Check-in Time</label>
+                    <button type="button" className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => setShowTimeInputs(!showTimeInputs)}>
+                      {showTimeInputs ? 'Hide' : 'Set Check-in Time'}
+                    </button>
+                  </div>
+                  
+                  {showTimeInputs && (
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.8rem' }}>Hours (24h)</label>
+                        <select 
+                          value={formData.shift_start.split(':')[0]} 
+                          onChange={(e) => setFormData({...formData, shift_start: `${e.target.value}:${formData.shift_start.split(':')[1]}`})}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map(h => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.8rem' }}>Minutes</label>
+                        <select 
+                          value={formData.shift_start.split(':')[1]} 
+                          onChange={(e) => setFormData({...formData, shift_start: `${formData.shift_start.split(':')[0]}:${e.target.value}`})}
+                        >
+                          {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {(!showTimeInputs && formData.shift_start) && (
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                      Currently set to: <strong>{formData.shift_start}</strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
