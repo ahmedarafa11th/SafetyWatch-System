@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Cameras
         Route::get('/cameras',                         [CameraController::class, 'index']);
+        Route::post('/cameras/upload-video',           [CameraController::class, 'uploadVideo']);
         Route::post('/cameras',                        [CameraController::class, 'store']);
         Route::put('/cameras/{camera}',                [CameraController::class, 'update']);
         Route::delete('/cameras/{camera}',             [CameraController::class, 'destroy']);

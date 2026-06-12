@@ -26,6 +26,22 @@ class CameraController extends Controller
         return $this->success(['stats' => $stats, 'cameras' => $cameras]);
     }
 
+    // POST /api/admin/cameras/upload-video
+    public function uploadVideo(Request $request)
+    {
+        $request->validate([
+            'video' => 'required|file|mimes:mp4,mov,avi|max:51200' // 50MB max
+        ]);
+
+        $file = $request->file('video');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('public/test_videos', $filename);
+
+        return $this->success([
+            'url' => asset('storage/test_videos/' . $filename)
+        ], 'Video uploaded successfully');
+    }
+
     // POST /api/admin/cameras
     public function store(Request $request)
     {

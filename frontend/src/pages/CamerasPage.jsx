@@ -140,13 +140,14 @@ export default function CamerasPage() {
   const [cameras, setCameras]     = useState([]);
   const [stats, setStats]         = useState({ total: 0, online: 0, offline: 0, total_alerts: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [showAdd, setShowAdd]     = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
   const [selected, setSelected]   = useState(null); // camera id for settings modal
   const [isSaving, setIsSaving]   = useState(false);
-
-  const emptyForm = { name: '', location: '', ip_address: '', status: 'online' };
-  const [addForm, setAddForm]   = useState(emptyForm);
-  const [editForm, setEditForm] = useState(emptyForm);
+  const [addForm, setAddForm] = useState({ name: '', location: '', ip_address: '', status: 'online' });
+  const [editForm, setEditForm] = useState({ name: '', location: '', ip_address: '', status: 'online' });
+  const [previewId, setPreviewId] = useState(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchCameras = async () => {
@@ -173,9 +174,10 @@ export default function CamerasPage() {
   };
 
   const selectedCam = cameras.find(c => c.id === selected) ?? null;
+  const previewCam = cameras.find(c => c.id === previewId) ?? null;
 
   // ── Add ────────────────────────────────────────────────────────────────────
-  const openAdd  = () => { setAddForm(emptyForm); setShowAdd(true); document.body.style.overflow = 'hidden'; };
+  const openAdd  = () => { setAddForm({ name: '', location: '', ip_address: '', status: 'online' }); setShowAdd(true); document.body.style.overflow = 'hidden'; };
   const closeAdd = () => { setShowAdd(false); document.body.style.overflow = ''; };
 
   const handleAdd = async () => {
@@ -231,12 +233,52 @@ export default function CamerasPage() {
     if (!window.confirm('Delete this camera?')) return;
     try {
       await api.delete(`/admin/cameras/${id}`);
-      closeSettings();
-      fetchCameras();
+      await fetchCameras();
+      if (selected === id) closeSettings();
     } catch (err) {
       alert(err.message || 'Error deleting camera');
     }
   };
+
+  // ── Upload Video ───────────────────────────────────────────────────────────
+  const openUpload = () => { setShowUpload(true); setUploadFile(null); document.body.style.overflow = 'hidden'; };
+  const closeUpload = () => { setShowUpload(false); setUploadFile(null); document.body.style.overflow = ''; };
+
+  const handleUpload = async () => {
+    if (!uploadFile) return alert('Please select an mp4 video file.');
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('video', uploadFile);
+
+      const res = await api.post('/admin/cameras/upload-video', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const videoUrl = res.data.url;
+
+      // Automatically add it as a new Dummy Camera
+      await api.post('/admin/cameras', {
+        name:       'Test Video Camera',
+        location:   'Virtual Upload',
+        ip_address: null,
+        stream_url: videoUrl,
+        status:     'online',
+        is_ai_enabled: true
+      });
+
+      await fetchCameras();
+      closeUpload();
+    } catch (err) {
+      alert(err.message || 'Error uploading video');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ── Preview Modal ──────────────────────────────────────────────────────────
+  const openPreview = (cam) => { setPreviewId(cam.id); document.body.style.overflow = 'hidden'; };
+  const closePreview = () => { setPreviewId(null); document.body.style.overflow = ''; };
 
   const handleToggle = async (id, currentStatus) => {
     if (!id) { alert('No camera selected!'); return; }
@@ -270,12 +312,15 @@ export default function CamerasPage() {
           <h1>Camera Management</h1>
           <p>Monitor and manage all security cameras</p>
         </div>
-        <div className="page-actions">
-          <button className="btn-add" onClick={openAdd}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+        <h1 className="page-title">Cameras & AI Streams</h1>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn btn-primary" onClick={openAdd}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Add Camera
+          </button>
+          <button className="btn btn-outline" onClick={openUpload} style={{ borderColor: 'var(--primary-color)', color: 'var(--primary-color)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Upload Video (Test Model)
           </button>
         </div>
       </div>
@@ -363,13 +408,18 @@ export default function CamerasPage() {
                   <span className="status-time">{formatTime(cam.last_active_at || cam.created_at)}</span>
                   <span className={`alerts-count ${(cam.total_alerts || 0) === 0 ? 'zero' : ''}`}>{cam.total_alerts || 0} alerts</span>
                 </div>
-                <div className="camera-footer">
-                  <button className="btn-settings" onClick={() => openSettings(cam)}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="camera-footer" style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-primary" style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }} onClick={() => openPreview(cam)}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                      <polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                    Preview
+                  </button>
+                  <button className="btn btn-outline" style={{ width: '40px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => openSettings(cam)} title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="3"/>
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
-                    Settings
                   </button>
                 </div>
               </div>
@@ -432,17 +482,37 @@ export default function CamerasPage() {
         document.body
       )}
 
+      {/* ── UPLOAD VIDEO MODAL ── */}
+      {showUpload && createPortal(
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) closeUpload(); }}>
+          <div className="modal">
+            <h2>Upload Video (Test Model)</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Upload an MP4 video. It will be added as a virtual camera, and the edge worker will process its frames automatically.
+            </p>
+
+            <div className="form-group">
+              <label>Select MP4 Video</label>
+              <input type="file" accept="video/mp4,video/quicktime,video/x-msvideo" 
+                onChange={e => setUploadFile(e.target.files[0])} />
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={closeUpload} disabled={isSaving}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleUpload} disabled={isSaving}>
+                {isSaving ? 'Uploading...' : 'Upload & Add'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* ── SETTINGS MODAL ── */}
       {selectedCam && createPortal(
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) closeSettings(); }}>
           <div className="modal" style={{ width: '95vw', maxWidth: '1000px', maxHeight: '95vh', overflowY: 'auto' }}>
-            <h2 style={{ marginBottom: '12px' }}>{selectedCam.name}</h2>
-
-            {/* Live Stream — auto-detect */}
-            <CameraStream
-              url={selectedCam.stream_url || buildStreamUrl(editForm.ip_address)}
-              height="420px"
-            />
+            <h2 style={{ marginBottom: '16px' }}>Camera Settings: {selectedCam.name}</h2>
 
             {/* Edit Fields */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
@@ -482,6 +552,49 @@ export default function CamerasPage() {
               </button>
               <button className="btn btn-outline" onClick={() => handleDelete(selected)}>🗑 Delete</button>
               <button className="btn btn-outline" onClick={closeSettings}>Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── PREVIEW MODAL ── */}
+      {previewCam && createPortal(
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) closePreview(); }}>
+          <div className="modal" style={{ width: '95vw', maxWidth: '1000px', maxHeight: '95vh', overflowY: 'auto', position: 'relative' }}>
+            <h2 style={{ marginBottom: '12px' }}>{previewCam.name} - Live Preview</h2>
+
+            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
+              {/* Live Stream — auto-detect */}
+              <CameraStream
+                url={previewCam.stream_url || buildStreamUrl(previewCam.ip_address)}
+                height="500px"
+              />
+
+              {/* Live AI Violence Telemetry Bar (overlaid) */}
+              {previewCam.is_ai_enabled && !previewCam.is_entrance && previewCam.status === 'online' && (
+                <div style={{ position: 'absolute', bottom: '20px', left: '20px', right: '20px', display: 'flex', flexDirection: 'column', gap: '6px', zIndex: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.9)', letterSpacing: '0.5px' }}>
+                    <span>AI VIOLENCE RISK LEVEL</span>
+                    <span style={{ color: (previewCam.current_violence_score || 0) >= 0.70 ? '#ef4444' : (previewCam.current_violence_score || 0) >= 0.40 ? '#f59e0b' : '#10b981' }}>
+                      {Math.round((previewCam.current_violence_score || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${(previewCam.current_violence_score || 0) * 100}%`,
+                      background: (previewCam.current_violence_score || 0) >= 0.70 ? '#ef4444' : (previewCam.current_violence_score || 0) >= 0.40 ? '#f59e0b' : '#10b981',
+                      transition: 'width 0.3s ease-out, background 0.3s ease-out',
+                      boxShadow: (previewCam.current_violence_score || 0) >= 0.70 ? '0 0 12px #ef4444' : 'none'
+                    }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
+              <button className="btn btn-outline" onClick={closePreview}>Close Preview</button>
             </div>
           </div>
         </div>,

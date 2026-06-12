@@ -182,7 +182,7 @@ active_streams = {}  # { camera_id: {"thread": Thread, "is_streaming": True} }
 
 TELEMETRY_URL = f"{LARAVEL_API_URL}/api/ai/telemetry"
 
-def send_telemetry(camera_id: int, score: float):
+def _send_telemetry_sync(camera_id: int, score: float):
     """Send live violence score to the Laravel backend for the dashboard bar."""
     try:
         payload = {
@@ -201,7 +201,11 @@ def send_telemetry(camera_id: int, score: float):
         # Silently fail telemetry on timeout to avoid spamming the console
         pass
 
-def trigger_webhook(camera_id: int, score: float):
+def send_telemetry(camera_id: int, score: float):
+    """Fire-and-forget telemetry."""
+    threading.Thread(target=_send_telemetry_sync, args=(camera_id, score)).start()
+
+def _trigger_webhook_sync(camera_id: int, score: float):
     """Send an alert to the Laravel backend."""
     try:
         payload = {
@@ -227,6 +231,10 @@ def trigger_webhook(camera_id: int, score: float):
     except Exception as e:
         print(f"⚠️ Failed to send webhook for Camera {camera_id}: {e}")
 
+def trigger_webhook(camera_id: int, score: float):
+    """Fire-and-forget webhook."""
+    threading.Thread(target=_trigger_webhook_sync, args=(camera_id, score)).start()
+
 def process_stream(camera_id: int, rtsp_url: str):
     print(f"📡 Camera {camera_id}: Connecting to stream: {rtsp_url}")
     
@@ -241,6 +249,7 @@ def process_stream(camera_id: int, rtsp_url: str):
     print(f"✅ Camera {camera_id}: Stream connected successfully!")
     frames_buffer = []
     frame_counter = 0
+    last_webhook_time = 0
     
     while True:
         # Thread-safe check if we should still be streaming
@@ -288,9 +297,13 @@ def process_stream(camera_id: int, rtsp_url: str):
                 send_telemetry(camera_id, violence_score)
                 
                 if violence_score >= THRESHOLD:
-                    print(f"⚠️ Camera {camera_id}: VIOLENCE DETECTED! Triggering webhook...")
-                    trigger_webhook(camera_id, violence_score)
-                    time.sleep(5) # Wait 5 seconds to avoid spamming alerts
+                    current_time = time.time()
+                    if current_time - last_webhook_time > 10:
+                        print(f"⚠️ Camera {camera_id}: VIOLENCE DETECTED! Triggering webhook...")
+                        trigger_webhook(camera_id, violence_score)
+                        last_webhook_time = current_time
+                    else:
+                        print(f"⚠️ Camera {camera_id}: Violence detected, but suppressing webhook (cooldown active).")
             # Keep the latest 20 frames and discard the oldest 5. 
             # This makes the AI evaluate every 0.5 seconds (at 30FPS with skip=3) instead of every 2.5 seconds.
             frames_buffer = frames_buffer[5:]
