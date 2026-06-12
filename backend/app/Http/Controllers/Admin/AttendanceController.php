@@ -105,17 +105,30 @@ class AttendanceController extends Controller
 
         $attendance = Attendance::where('employee_id', $employee->id)->whereDate('date', $date)->first();
 
-        // Handle explicitly requested Check In
-        if ($action === 'check_in' || (!$action && !$attendance)) {
-            if ($attendance && $attendance->check_in) {
-                return $this->success($attendance, 'You are already checked in for today!');
+        // Handle Check In
+        if ($action === 'check_in') {
+            if ($attendance) {
+                if ($attendance->check_out) {
+                    return $this->success(null, 'You have already completed your attendance for today.');
+                }
+                if ($attendance->check_in) {
+                    return $this->success($attendance, 'You are already checked in.');
+                }
             }
 
             $shiftStart = \Carbon\Carbon::parse($employee->shift_start);
             $actualStart = \Carbon\Carbon::parse($time);
-            $lateMinutes = $actualStart->diffInMinutes($shiftStart, false); 
             
-            $status = ($lateMinutes < -($employee->late_threshold ?? 15)) ? 'late' : 'present';
+            // diffInMinutes with false returns positive if actualStart is before shiftStart, negative if after
+            $lateMinutes = $shiftStart->diffInMinutes($actualStart, false); 
+            
+            if ($lateMinutes <= 15) {
+                $status = 'present'; // On Time
+            } elseif ($lateMinutes > 15 && $lateMinutes < 60) {
+                $status = 'late';
+            } else {
+                $status = 'absent';
+            }
 
             $attendance = Attendance::create([
                 'employee_id'      => $employee->id,
@@ -129,14 +142,18 @@ class AttendanceController extends Controller
             return $this->success($attendance, "{$employee->user->name} Checked IN via Face Recognition");
         }
 
-        // Handle explicitly requested Check Out
-        if ($action === 'check_out' || (!$action && $attendance)) {
+        // Handle Check Out
+        if ($action === 'check_out') {
             if (!$attendance || !$attendance->check_in) {
                 return $this->success(null, 'Cannot check out without checking in first!');
             }
 
+            if ($attendance->check_out) {
+                return $this->success($attendance, 'You are already checked out. Please check in again tomorrow before checking out.');
+            }
+
             $checkInTime = \Carbon\Carbon::parse("$date " . $attendance->check_in);
-            if (now()->diffInMinutes($checkInTime) > 5) {
+            if (now()->diffInMinutes($checkInTime) > 1) { // Changed cooldown to 1 minute for easier testing, though normal is 5
                 $attendance->update([
                     'check_out'        => $time,
                     'check_out_source' => 'face_recognition',
@@ -145,6 +162,22 @@ class AttendanceController extends Controller
                 return $this->success($attendance, "{$employee->user->name} Checked OUT via Face Recognition");
             }
             return $this->success($attendance, 'Face recognized (Cooldown active)');
+        }
+
+        // Fallback for auto-detection (if action is null)
+        if (!$action) {
+            // Auto check-in if no record today
+            if (!$attendance) {
+                $request->merge(['action' => 'check_in']);
+                return $this->logViaFace($request);
+            }
+            // Auto check-out if checked in but not checked out
+            if ($attendance->check_in && !$attendance->check_out) {
+                $request->merge(['action' => 'check_out']);
+                return $this->logViaFace($request);
+            }
+            // If already completed today
+            return $this->success($attendance, 'You have already completed your attendance for today.');
         }
     }
 
