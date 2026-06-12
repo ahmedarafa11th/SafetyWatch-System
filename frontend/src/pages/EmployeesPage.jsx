@@ -304,28 +304,15 @@ export default function EmployeesPage() {
                       <label style={{ textTransform: 'capitalize', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
                         {side} Face Photo {!editEmployee && '*'}
                       </label>
-                      <label 
-                        className="btn-secondary" 
-                        style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '8px', 
-                          padding: '8px 16px', 
-                          cursor: 'pointer', 
-                          fontSize: '0.9rem',
-                          width: '100%',
-                          justifyContent: 'center',
-                          border: '1px dashed var(--accent)',
-                          color: 'var(--accent)',
-                          backgroundColor: 'var(--accent-light)'
-                        }}
-                      >
+                      <label className="btn-logout" style={{ justifyContent: 'center', width: '100%', padding: '10px 14px' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                           <polyline points="17 8 12 3 7 8"></polyline>
                           <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        {formData[`photo_${side}`] ? formData[`photo_${side}`].name : `Choose Image`}
+                        <span style={{ textTransform: 'capitalize' }}>
+                          {formData[`photo_${side}`] ? formData[`photo_${side}`].name : 'Choose Image'}
+                        </span>
                         <input type="file" accept="image/jpeg, image/png, image/jpg" 
                           style={{ display: 'none' }}
                           onChange={(e) => setFormData({...formData, [`photo_${side}`]: e.target.files[0]})} />
@@ -344,7 +331,7 @@ export default function EmployeesPage() {
                         </div>
                       )}
                     </div>
-                    <button type="button" className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => setShowTimeInputs(!showTimeInputs)}>
+                    <button type="button" className="btn-logout" onClick={() => setShowTimeInputs(!showTimeInputs)}>
                       {showTimeInputs ? 'Hide' : 'Configure'}
                     </button>
                   </div>
