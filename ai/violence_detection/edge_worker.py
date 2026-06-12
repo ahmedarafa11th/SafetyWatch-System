@@ -4,7 +4,18 @@ import time
 import json
 import requests
 import threading
+from urllib.parse import urlparse
 import numpy as np
+
+# Bypass any system proxies that might block OpenCV/FFmpeg from reaching local IP cameras
+os.environ["http_proxy"] = ""
+os.environ["https_proxy"] = ""
+os.environ["HTTP_PROXY"] = ""
+os.environ["HTTPS_PROXY"] = ""
+
+# Force FFmpeg to use TCP for RTSP/HTTP and extend timeouts
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|timeout;5000000"
+
 import tensorflow as tf
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.applications.vgg16 import preprocess_input
@@ -238,7 +249,7 @@ def trigger_webhook(camera_id: int, score: float):
 def process_stream(camera_id: int, rtsp_url: str):
     print(f"📡 Camera {camera_id}: Connecting to stream: {rtsp_url}")
     
-    cap = cv2.VideoCapture(rtsp_url)
+    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
     if not cap.isOpened():
         print(f"❌ Camera {camera_id}: Could not connect to the video stream.")
         with streams_lock:
@@ -262,7 +273,7 @@ def process_stream(camera_id: int, rtsp_url: str):
             print(f"⚠️ Camera {camera_id}: Stream disconnected. Attempting to reconnect in 5s...")
             cap.release()
             time.sleep(5)
-            cap = cv2.VideoCapture(rtsp_url)
+            cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
             if not cap.isOpened():
                 print(f"❌ Camera {camera_id}: Reconnection failed. Will retry...")
             continue
