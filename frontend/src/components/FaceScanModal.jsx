@@ -74,7 +74,7 @@ export default function FaceScanModal({ isOpen, actionType, onClose, onLogSucces
           // Assuming we need token from localStorage
           const token = localStorage.getItem('token') || '';
           
-          const logRes = await fetch('http://localhost:8000/api/admin/attendance/log-via-face', {
+          const logRes = await fetch(`${import.meta.env.VITE_API_URL}/admin/attendance/log-via-face`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
