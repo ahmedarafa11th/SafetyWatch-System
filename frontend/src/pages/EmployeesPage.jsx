@@ -281,47 +281,6 @@ export default function EmployeesPage() {
                     value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
                 </div>
 
-                <div className="form-group" style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showTimeInputs ? '1rem' : '0' }}>
-                    <label style={{ margin: 0 }}>Check-in Time</label>
-                    <button type="button" className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => setShowTimeInputs(!showTimeInputs)}>
-                      {showTimeInputs ? 'Hide' : 'Set Check-in Time'}
-                    </button>
-                  </div>
-                  
-                  {showTimeInputs && (
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8rem' }}>Hours (24h)</label>
-                        <select 
-                          value={formData.shift_start.split(':')[0]} 
-                          onChange={(e) => setFormData({...formData, shift_start: `${e.target.value}:${formData.shift_start.split(':')[1]}`})}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map(h => (
-                            <option key={h} value={h}>{h}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8rem' }}>Minutes</label>
-                        <select 
-                          value={formData.shift_start.split(':')[1]} 
-                          onChange={(e) => setFormData({...formData, shift_start: `${formData.shift_start.split(':')[0]}:${e.target.value}`})}
-                        >
-                          {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map(m => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                  {(!showTimeInputs && formData.shift_start) && (
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                      Currently set to: <strong>{formData.shift_start}</strong>
-                    </div>
-                  )}
-                </div>
-
                 <div className="form-group">
                   <label>Status *</label>
                   <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
@@ -332,9 +291,9 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
-              {/* Right Side: Photos */}
-              <div style={{ flex: '1 1 300px' }}>
-                <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', height: '100%' }}>
+              {/* Right Side: Photos & Time */}
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                   <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Face Recognition Photos {!editEmployee && '*'}</h4>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.4' }}>
                     Upload 3 photos of the employee's face for AI attendance tracking. Mandatory for new employees.
@@ -345,7 +304,27 @@ export default function EmployeesPage() {
                       <label style={{ textTransform: 'capitalize', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>
                         {side} Face Photo {!editEmployee && '*'}
                       </label>
-                      <label className="btn-file-upload">
+                      <label 
+                        className="btn-secondary" 
+                        style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          padding: '8px 16px', 
+                          cursor: 'pointer', 
+                          fontSize: '0.9rem',
+                          width: '100%',
+                          justifyContent: 'center',
+                          border: '1px dashed var(--accent)',
+                          color: 'var(--accent)',
+                          backgroundColor: 'var(--accent-light)'
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
                         {formData[`photo_${side}`] ? formData[`photo_${side}`].name : `Choose Image`}
                         <input type="file" accept="image/jpeg, image/png, image/jpg" 
                           style={{ display: 'none' }}
@@ -353,6 +332,51 @@ export default function EmployeesPage() {
                       </label>
                     </div>
                   ))}
+                </div>
+
+                <div style={{ padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showTimeInputs ? '1.5rem' : '0' }}>
+                    <div>
+                      <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>Check-in Time</h4>
+                      {(!showTimeInputs && formData.shift_start) && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          Set to: <strong>{formData.shift_start}</strong>
+                        </div>
+                      )}
+                    </div>
+                    <button type="button" className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => setShowTimeInputs(!showTimeInputs)}>
+                      {showTimeInputs ? 'Hide' : 'Configure'}
+                    </button>
+                  </div>
+                  
+                  {showTimeInputs && (
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div className="form-group" style={{ flex: 1, margin: 0 }}>
+                        <label style={{ fontSize: '0.8rem', marginBottom: '0.4rem' }}>Hours (24h)</label>
+                        <select 
+                          style={{ width: '100%' }}
+                          value={formData.shift_start.split(':')[0]} 
+                          onChange={(e) => setFormData({...formData, shift_start: `${e.target.value}:${formData.shift_start.split(':')[1]}`})}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map(h => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ flex: 1, margin: 0 }}>
+                        <label style={{ fontSize: '0.8rem', marginBottom: '0.4rem' }}>Minutes</label>
+                        <select 
+                          style={{ width: '100%' }}
+                          value={formData.shift_start.split(':')[1]} 
+                          onChange={(e) => setFormData({...formData, shift_start: `${formData.shift_start.split(':')[0]}:${e.target.value}`})}
+                        >
+                          {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
