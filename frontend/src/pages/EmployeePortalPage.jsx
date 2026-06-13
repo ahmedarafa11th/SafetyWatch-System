@@ -12,6 +12,12 @@ const fmtTime = (t) => {
   return `${hr % 12 || 12}:${m} ${hr < 12 ? 'AM' : 'PM'}`;
 };
 
+const formatDate = (dateString) => {
+  if (!dateString || dateString === '-') return '—';
+  const d = new Date(dateString);
+  return d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 const badgeClass = (s) => {
   if (s === 'present') return 'badge-green';
   if (s === 'late')    return 'badge-orange';
@@ -77,7 +83,7 @@ function DashboardContent() {
             <tbody>
               {recent.map((r, i) => (
                 <tr key={i}>
-                  <td>{r.date}</td>
+                  <td>{formatDate(r.date)}</td>
                   <td>{fmtTime(r.check_in)}</td>
                   <td>{fmtTime(r.check_out)}</td>
                   <td>{r.total_hours}h</td>
@@ -122,12 +128,6 @@ function AttendanceContent() {
     if (!v) return 'Filter by Month';
     const [yr, mo] = v.split('-');
     return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo - 1]} ${yr}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString || dateString === '-') return '—';
-    const d = new Date(dateString);
-    return d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const exportCSV = () => {
