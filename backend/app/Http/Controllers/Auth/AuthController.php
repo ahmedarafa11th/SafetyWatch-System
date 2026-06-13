@@ -68,8 +68,27 @@ class AuthController extends Controller
     // POST /api/auth/logout
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Optional: remove fcm_token on logout if we don't want notifications to go to logged out devices
+        $user = $request->user();
+        if ($user) {
+            $user->update(['fcm_token' => null]);
+            $user->currentAccessToken()->delete();
+        }
         return $this->success(null, 'Logged out successfully');
+    }
+
+    // POST /api/auth/fcm-token
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string'
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $request->token
+        ]);
+
+        return $this->success(null, 'FCM token updated successfully');
     }
 
     // GET /api/auth/me

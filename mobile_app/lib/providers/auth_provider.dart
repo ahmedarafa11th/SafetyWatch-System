@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/api_constants.dart';
 import '../core/storage/secure_storage_service.dart';
@@ -74,6 +75,9 @@ class AuthNotifier extends Notifier<AuthState> {
           final userData = jsonDecode(userJson);
           final user = User.fromJson(userData);
           state = AuthState(user: user, isInitialized: true);
+          
+          // Sync FCM token for returning users
+          _syncFcmToken();
         } catch (_) {
           await _storage.clearAll();
           state = const AuthState(isInitialized: true);
@@ -134,6 +138,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
       state = AuthState(user: user, isInitialized: true);
 
+      // Sync FCM token
+      _syncFcmToken();
+
       return AuthResult(success: true, role: user.role);
     } catch (e) {
       final message = _extractErrorMessage(e, 'Invalid email or password.');
@@ -187,6 +194,27 @@ class AuthNotifier extends Notifier<AuthState> {
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  Future<void> _syncFcmToken() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      
+      if (settings.authorizationStatus == AuthorizationStatus.authorized || 
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        String? token = await messaging.getToken();
+        if (token != null) {
+          await _dio.post('/api/auth/fcm-token', data: {'token': token});
+        }
+      }
+    } catch (e) {
+      print("FCM Token sync failed: $e");
+    }
   }
 
   String _extractErrorMessage(dynamic error, String fallback) {

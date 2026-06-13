@@ -9,6 +9,9 @@ use App\Models\Alert;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
+use App\Models\User;
 
 class DetectionController extends Controller
 {
@@ -66,6 +69,24 @@ class DetectionController extends Controller
             $camera->update(['last_active_at' => now()]);
 
             Log::warning("AI Detection: {$request->detection_type} at Camera {$request->camera_id} ({$request->confidence}%)");
+
+            // Dispatch Push Notification to all admins
+            try {
+                $messaging = app('firebase.messaging');
+                $adminTokens = User::role('admin')->whereNotNull('fcm_token')->pluck('fcm_token')->toArray();
+
+                if (!empty($adminTokens)) {
+                    $notification = Notification::create(
+                        'Security Alert!',
+                        "{$violation->description}"
+                    );
+
+                    $message = CloudMessage::new()->withNotification($notification);
+                    $messaging->sendMulticast($message, $adminTokens);
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to send Firebase Push Notification: " . $e->getMessage());
+            }
 
             return $this->success([
                 'log_id'       => $log->id,

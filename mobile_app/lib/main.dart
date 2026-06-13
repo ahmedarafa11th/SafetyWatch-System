@@ -5,15 +5,27 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme.dart';
+import 'core/app_colors.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/admin_shell.dart';
 import 'screens/employee_shell.dart';
+import 'screens/employee_shell.dart';
 import 'providers/auth_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   if (Platform.isAndroid) {
     try {
@@ -63,6 +75,26 @@ class _SafetyWatchAppState extends ConsumerState<SafetyWatchApp> {
         themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
       });
     }
+
+    _setupForegroundMessaging();
+  }
+
+  void _setupForegroundMessaging() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Got a message whilst in the foreground!');
+      print('Message data: ${message.data}');
+
+      if (message.notification != null && mounted) {
+        // Show a simple snackbar for foreground notifications
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${message.notification?.title}: ${message.notification?.body}'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    });
   }
 
   void toggleTheme() async {
