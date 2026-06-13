@@ -91,3 +91,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.rar
+
+# Secrets & Artifacts
+safetywatch*-firebase-*.json
+*.apk
+AWS Key Pair/
