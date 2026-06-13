@@ -3,12 +3,11 @@
 # ----------------------------------------------------------------------
 # AI / Data Science
 # ----------------------------------------------------------------------
+**/__pycache__/
 ai/violence_detection/checkpoints/*.h5
 ai/violence_detection/checkpoints/*.hdf5
-ai/violence_detection/__pycache__/
 ai/violence_detection/*.pyc
 ai/violence_detection/.env
-ai/face_recognition/__pycache__/
 ai/face_recognition/*.pyc
 ai/face_recognition/.env
 ai/face_recognition/*.tgz
@@ -94,5 +93,7 @@ Thumbs.db
 
 # Secrets & Artifacts
 safetywatch*-firebase-*.json
+**/firebase-credentials.json
+**/google-services.json
 *.apk
 AWS Key Pair/
