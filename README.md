@@ -1,8 +1,8 @@
-# SafetyWatch System 🛡️👁️
+# SafetyWatch 🛡️
 
-**An advanced, AI-powered workplace safety and surveillance system.** 
+**Transforming ordinary CCTV cameras into intelligent, proactive security guards.** 
 
-SafetyWatch connects IP camera streams to deep learning models to detect violence and identify employees in real-time. Whenever an incident occurs, the system instantly alerts administrators through a live web dashboard and pushes mobile notifications to security personnel.
+SafetyWatch is an enterprise-grade AI surveillance platform designed to safeguard environments in real-time. By seamlessly integrating state-of-the-art deep learning models for immediate violence detection and highly accurate facial recognition, the platform instantly analyzes IP camera streams to identify physical altercations and recognize personnel. The moment a critical incident occurs, SafetyWatch eliminates human response delays by dispatching instant mobile push notifications directly to security teams, while simultaneously broadcasting live incident alerts to a centralized, cloud-hosted admin dashboard.
 
 ---
 
@@ -52,8 +52,8 @@ A fully-featured Flutter application for Android and iOS, providing on-the-go ac
 
 | Domain | Technologies Used |
 | :--- | :--- |
-| **AI & Vision** | Python, TensorFlow, PyTorch, OpenCV, `facenet_pytorch`, MTCNN, FastAPI, Scikit-learn |
-| **Backend API** | PHP, Laravel 10, SQLite / MySQL, Composer, AWS EC2, Firebase SDK (`kreait`) |
+| **AI & Vision** | Python, TensorFlow, PyTorch, OpenCV, facenet_pytorch, MTCNN, FastAPI, Scikit-learn |
+| **Backend API** | PHP, Laravel 10, SQLite / MySQL, Composer, AWS EC2, Firebase SDK (kreait) |
 | **Web Frontend** | React.js, Vite, React Router, Cloudflare Pages |
 | **Mobile App** | Flutter, Dart, Firebase Cloud Messaging (FCM) |
 
