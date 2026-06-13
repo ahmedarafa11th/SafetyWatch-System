@@ -52,9 +52,9 @@ A fully-featured Flutter application for Android and iOS, providing on-the-go ac
 
 | Domain | Technologies Used |
 | :--- | :--- |
-| **AI & Vision** | Python, PyTorch, OpenCV, `facenet_pytorch`, MTCNN |
-| **Backend API** | PHP, Laravel 10, SQLite / MySQL, Composer, AWS EC2 |
-| **Web Frontend** | React.js, Vite, Axios, Cloudflare Pages |
+| **AI & Vision** | Python, TensorFlow, PyTorch, OpenCV, `facenet_pytorch`, MTCNN, FastAPI, Scikit-learn |
+| **Backend API** | PHP, Laravel 10, SQLite / MySQL, Composer, AWS EC2, Firebase SDK (`kreait`) |
+| **Web Frontend** | React.js, Vite, React Router, Cloudflare Pages |
 | **Mobile App** | Flutter, Dart, Firebase Cloud Messaging (FCM) |
 
 ---
