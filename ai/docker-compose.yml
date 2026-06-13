@@ -14,6 +14,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - LARAVEL_API_URL=${LARAVEL_API_URL:-http://host.docker.internal:8000}
+      - LARAVEL_API_TOKEN=${LARAVEL_API_TOKEN:-135|qhK9seDtsTL4bjpW5hUm4jf9Uj0xfDzV3SlSdP0ie9c9793e}
       - CAMERA_API_KEY=${CAMERA_API_KEY:-secret}
     deploy:
       resources:
@@ -37,6 +38,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - LARAVEL_API_URL=${LARAVEL_API_URL:-http://host.docker.internal:8000}
       - CAMERA_API_KEY=${CAMERA_API_KEY:-secret}
+    command: ["python", "edge_worker.py"]
     deploy:
       resources:
         reservations:

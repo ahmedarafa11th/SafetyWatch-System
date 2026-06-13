@@ -97,7 +97,7 @@ class CamerasNotifier extends Notifier<CamerasState> {
       final formData = FormData.fromMap({
         'video': await MultipartFile.fromFile(videoFile.path!, filename: videoFile.name),
       });
-      final uploadResponse = await _dio.post('/admin/cameras/upload-video', data: formData);
+      final uploadResponse = await _dio.post('/api/admin/cameras/upload-video', data: formData);
       if (uploadResponse.statusCode == 200) {
         final url = uploadResponse.data['data']['url'];
         await _dio.post(ApiConstants.cameras, data: {
