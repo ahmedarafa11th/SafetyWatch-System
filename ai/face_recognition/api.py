@@ -87,6 +87,10 @@ def extract_embedding(image_bytes: bytes):
 # Endpoints
 # -----------------------------
 
+@app.get("/api/debug")
+def get_debug():
+    return {"names": known_names}
+
 @app.post("/api/register")
 async def register_employee(
     name: str = Form(...),

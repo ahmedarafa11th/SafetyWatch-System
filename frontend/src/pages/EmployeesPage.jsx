@@ -120,16 +120,42 @@ export default function EmployeesPage() {
         }
       }
 
+      let responseData;
       if (editEmployee) {
         // If it's multipart, we send as POST with _method=PUT to Laravel
         if (payload instanceof FormData) {
-          await api.post(`/admin/employees/${editEmployee.id}`, payload);
+          const res = await api.post(`/admin/employees/${editEmployee.id}`, payload);
+          responseData = res.data;
         } else {
-          await api.put(`/admin/employees/${editEmployee.id}`, payload);
+          const res = await api.put(`/admin/employees/${editEmployee.id}`, payload);
+          responseData = res.data;
         }
       } else {
-        await api.post('/admin/employees', payload);
+        const res = await api.post('/admin/employees', payload);
+        responseData = res.data;
       }
+
+      // Register with the local AI Face Recognition Server
+      if (formData.photo_front) {
+        try {
+          const aiPayload = new FormData();
+          aiPayload.append('name', responseData?.data?.user?.name || formData.email || 'Employee');
+          aiPayload.append('employee_code', responseData?.data?.employee_code || editEmployee?.employee_code || 'EMP-UNKNOWN');
+          
+          if (formData.photo_front) aiPayload.append('photo_front', formData.photo_front);
+          if (formData.photo_left) aiPayload.append('photo_left', formData.photo_left);
+          if (formData.photo_right) aiPayload.append('photo_right', formData.photo_right);
+          
+          await fetch('http://localhost:8000/api/register', {
+            method: 'POST',
+            body: aiPayload
+          });
+          console.log("Registered face with local AI server successfully.");
+        } catch (aiErr) {
+          console.error("Failed to register with local AI server:", aiErr);
+        }
+      }
+
       fetchEmployees(searchQuery);
       closeModal();
     } catch (err) {
