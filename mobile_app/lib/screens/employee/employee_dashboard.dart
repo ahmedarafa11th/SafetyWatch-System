@@ -47,9 +47,6 @@ class _EmployeeDashboardScreenState
             const Text("My Dashboard",
                 style: TextStyle(
                     fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text("Welcome back, $userName",
-                style: TextStyle(color: secondaryText, fontSize: 14)),
             const SizedBox(height: 20),
 
             // Error

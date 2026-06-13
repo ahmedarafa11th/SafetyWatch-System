@@ -456,11 +456,6 @@ class _CameraManagementScreenState
                       const Text("Cameras",
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(
-                          "Manage surveillance cameras and live feeds",
-                          style:
-                              TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
                 ),

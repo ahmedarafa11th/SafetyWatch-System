@@ -339,10 +339,6 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
                       const Text("Employees",
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text("Manage staff, roles, and access levels",
-                          style:
-                              TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
                 ),

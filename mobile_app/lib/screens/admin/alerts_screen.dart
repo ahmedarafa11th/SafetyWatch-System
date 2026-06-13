@@ -45,11 +45,6 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                       const Text("Security Alerts",
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(
-                          "Real-time violence detection and security monitoring",
-                          style:
-                              TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
                 ),

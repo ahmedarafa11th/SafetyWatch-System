@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:intl/intl.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/stat_card.dart';
 import '../../widgets/status_badge.dart';
@@ -192,67 +193,21 @@ class _EmployeeAttendanceScreenState
             const Text("My Attendance Logs",
                 style:
                     TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text("View your complete attendance history",
-                style: TextStyle(color: secondaryText, fontSize: 14)),
             const SizedBox(height: 16),
 
             // Filter + Export buttons
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showMonthPicker,
-                    icon: const Icon(Icons.calendar_month, size: 18),
-                    label: Text(
-                      _formatMonthLabel(state.filterMonth),
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      side: BorderSide(
-                          color: isDark
-                              ? AppColors.darkBorder
-                              : AppColors.lightBorder),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: () => _faceScan('check_in'),
-                  icon: const Icon(Icons.login, size: 18),
-                  label: const Text("Check In",
-                      style: TextStyle(fontSize: 13)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () => _faceScan('check_out'),
-                  icon: const Icon(Icons.logout, size: 18),
-                  label: const Text("Check Out",
-                      style: TextStyle(fontSize: 13)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
+                IconButton(
+                  onPressed: _showMonthPicker,
+                  icon: const Icon(Icons.calendar_month, size: 20),
+                  tooltip: _formatMonthLabel(state.filterMonth),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: state.records.isEmpty ? null : _exportCsv,
-                  icon: Icon(Icons.download, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                  icon: Icon(Icons.download, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary, size: 20),
                   tooltip: 'Export CSV',
                 ),
               ],
@@ -341,7 +296,7 @@ class _EmployeeAttendanceScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(record.date,
+                              Text(DateFormat('EEE, MMM d, yyyy').format(DateTime.parse(record.date)),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14)),

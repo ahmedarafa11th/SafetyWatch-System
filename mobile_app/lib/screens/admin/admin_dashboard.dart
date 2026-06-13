@@ -39,9 +39,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           children: [
             const Text("Admin Dashboard",
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text("Overview of your workplace safety system",
-                style: TextStyle(color: secondaryText, fontSize: 14)),
             const SizedBox(height: 20),
 
             // Error banner

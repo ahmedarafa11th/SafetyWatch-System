@@ -56,10 +56,6 @@ class _ViolationsScreenState extends ConsumerState<ViolationsScreen> {
                       const Text("Violations",
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text("Monitor security violations and incidents",
-                          style:
-                              TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
                 ),

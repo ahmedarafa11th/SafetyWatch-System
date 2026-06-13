@@ -201,13 +201,9 @@ class _AdminAttendanceScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Attendance",
+                      const Text("Attendance Logs",
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text("Monitor company-wide attendance",
-                          style:
-                              TextStyle(color: secondaryText, fontSize: 14)),
                     ],
                   ),
                 ),

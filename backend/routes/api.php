@@ -69,7 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance',       [AttendanceController::class, 'index']);
         Route::post('/attendance',      [AttendanceController::class, 'store']);
         Route::get('/attendance/stats', [AttendanceController::class, 'stats']);
-        Route::post('/attendance/log-via-face', [AttendanceController::class, 'logViaFace']);
 
         // Violations
         Route::get('/violations',                      [ViolationController::class, 'index']);
