@@ -139,8 +139,9 @@ export default function EmployeesPage() {
       if (formData.photo_front) {
         try {
           const aiPayload = new FormData();
-          aiPayload.append('name', responseData?.user?.name || formData.email || 'Employee');
-          aiPayload.append('employee_code', responseData?.employee_code || editEmployee?.employee_code || 'EMP-UNKNOWN');
+          const empData = responseData?.data || responseData; // Handle both nested and unnested responses
+          aiPayload.append('name', empData?.user?.name || formData.email || 'Employee');
+          aiPayload.append('employee_code', empData?.employee_code || editEmployee?.employee_code || 'EMP-UNKNOWN');
           
           if (formData.photo_front) aiPayload.append('photo_front', formData.photo_front);
           if (formData.photo_left) aiPayload.append('photo_left', formData.photo_left);

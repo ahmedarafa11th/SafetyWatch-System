@@ -193,10 +193,10 @@ export default function AttendanceAdminPage() {
               ) : logs.map((log, idx) => (
                 <tr key={log.id || idx}>
                   <td><strong>{log.employee?.user?.name || '—'}</strong></td>
-                  <td className="mono">{formatDate(log.date)}</td>
-                  <td className="mono">{log.check_in || '—'}</td>
-                  <td className="mono">{log.check_out || '—'}</td>
-                  <td className="mono">{log.total_hours ? `${log.total_hours}h` : '—'}</td>
+                  <td>{formatDate(log.date)}</td>
+                  <td>{log.check_in || '—'}</td>
+                  <td>{log.check_out || '—'}</td>
+                  <td>{log.total_hours ? `${log.total_hours}h` : '—'}</td>
                   <td>
                     <span className={`badge ${getStatusBadge(log.status)}`}>
                       {log.status.charAt(0).toUpperCase() + log.status.slice(1)}

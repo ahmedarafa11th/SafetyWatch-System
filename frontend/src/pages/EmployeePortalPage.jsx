@@ -124,10 +124,16 @@ function AttendanceContent() {
     return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo - 1]} ${yr}`;
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString || dateString === '-') return '—';
+    const d = new Date(dateString);
+    return d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   const exportCSV = () => {
     const rows = [
       ['Date', 'Check In', 'Check Out', 'Hours', 'Status'],
-      ...records.map(r => [r.date, fmtTime(r.check_in), fmtTime(r.check_out), r.total_hours + 'h', r.status]),
+      ...records.map(r => [formatDate(r.date), fmtTime(r.check_in), fmtTime(r.check_out), r.total_hours + 'h', r.status]),
     ];
     const csv  = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -196,7 +202,7 @@ function AttendanceContent() {
               <tr><td colSpan={5} style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-secondary)' }}>No records found.</td></tr>
             ) : records.map((r, i) => (
               <tr key={i}>
-                <td>{r.date}</td>
+                <td>{formatDate(r.date)}</td>
                 <td>{fmtTime(r.check_in)}</td>
                 <td>{fmtTime(r.check_out)}</td>
                 <td>{r.total_hours}h</td>
