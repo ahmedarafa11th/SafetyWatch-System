@@ -143,6 +143,17 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 8,
         ),
+        timePickerTheme: TimePickerThemeData(
+          backgroundColor: AppColors.lightCard,
+          hourMinuteColor: AppColors.lightBg,
+          hourMinuteTextColor: AppColors.lightTextPrimary,
+          dayPeriodColor: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.primary.withAlpha(50) : AppColors.lightBg),
+          dayPeriodTextColor: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.primary : AppColors.lightTextPrimary),
+          dialHandColor: AppColors.primary,
+          dialBackgroundColor: AppColors.lightBg,
+        ),
       );
 
   static ThemeData get dark => ThemeData(
@@ -267,6 +278,17 @@ class AppTheme {
         dialogTheme: DialogThemeData(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 8,
+        ),
+        timePickerTheme: TimePickerThemeData(
+          backgroundColor: AppColors.darkCard,
+          hourMinuteColor: AppColors.darkBg,
+          hourMinuteTextColor: AppColors.darkTextPrimary,
+          dayPeriodColor: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.primary.withAlpha(50) : AppColors.darkBg),
+          dayPeriodTextColor: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.primary : AppColors.darkTextPrimary),
+          dialHandColor: AppColors.primary,
+          dialBackgroundColor: AppColors.darkBg,
         ),
       );
 }

@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/api_constants.dart';
 import '../models/camera.dart';
@@ -42,8 +45,10 @@ class CamerasNotifier extends Notifier<CamerasState> {
 
   DioClient get _dio => ref.read(dioProvider);
 
-  Future<void> fetch() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  Future<void> fetch({bool background = false}) async {
+    if (!background) {
+      state = state.copyWith(isLoading: true, clearError: true);
+    }
     try {
       final response = await _dio.get(ApiConstants.cameras);
       final data = response.data['data'] ?? response.data;
@@ -51,9 +56,11 @@ class CamerasNotifier extends Notifier<CamerasState> {
       final cameras = list.map((e) => Camera.fromJson(e)).toList();
       final stats = CameraStats.fromJson(data['stats'] ?? {});
 
-      state = CamerasState(cameras: cameras, stats: stats, isLoading: false);
+      state = state.copyWith(cameras: cameras, stats: stats, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Failed to load cameras.');
+      if (!background) {
+        state = state.copyWith(isLoading: false, error: 'Failed to load cameras.');
+      }
     }
   }
 
@@ -79,6 +86,34 @@ class CamerasNotifier extends Notifier<CamerasState> {
       return true;
     } catch (e) {
       state = state.copyWith(isSaving: false, error: _extractError(e, 'Failed to update camera.'));
+      return false;
+    }
+  }
+
+  Future<bool> uploadTestVideo(PlatformFile videoFile) async {
+    state = state.copyWith(isSaving: true, clearError: true);
+    try {
+      if (videoFile.path == null) return false;
+      final formData = FormData.fromMap({
+        'video': await MultipartFile.fromFile(videoFile.path!, filename: videoFile.name),
+      });
+      final uploadResponse = await _dio.post('/admin/cameras/upload-video', data: formData);
+      if (uploadResponse.statusCode == 200) {
+        final url = uploadResponse.data['data']['url'];
+        await _dio.post(ApiConstants.cameras, data: {
+          'name': 'Test Video Camera',
+          'location': 'Virtual Upload',
+          'ip_address': null,
+          'stream_url': url,
+          'status': 'online',
+          'is_ai_enabled': true,
+        });
+        await fetch();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      state = state.copyWith(isSaving: false, error: _extractError(e, 'Failed to upload test video.'));
       return false;
     }
   }

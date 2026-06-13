@@ -350,18 +350,9 @@ export default function CamerasPage() {
                 {/* Feed */}
                 <div className="camera-feed" style={{ position: 'relative', overflow: 'hidden' }}>
                   {isOnline && streamUrl ? (
-                    isVideoFile(streamUrl) ? (
-                      <video autoPlay loop muted playsInline
-                        src={streamUrl}
-                        style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, objectFit: 'cover' }}
-                        onError={e => { e.target.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <img src={streamUrl} alt={cam.name}
-                        style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, objectFit: 'cover' }}
-                        onError={e => { e.target.style.display = 'none'; }}
-                      />
-                    )
+                    <div style={{ position: 'absolute', inset: 0 }}>
+                      <CameraStream url={streamUrl} height="100%" />
+                    </div>
                   ) : (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>

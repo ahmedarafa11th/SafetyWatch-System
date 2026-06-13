@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/stat_card.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/camera_stream.dart';
 import '../../providers/cameras_provider.dart';
 import '../../models/camera.dart';
 
@@ -17,10 +20,25 @@ class CameraManagementScreen extends ConsumerStatefulWidget {
 
 class _CameraManagementScreenState
     extends ConsumerState<CameraManagementScreen> {
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(camerasProvider.notifier).fetch());
+    
+    // Start sliding window polling
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) {
+        ref.read(camerasProvider.notifier).fetch(background: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   void _showAddDialog() {
@@ -80,6 +98,7 @@ class _CameraManagementScreenState
                     onChanged: (v) => form.ipAddress = v,
                   ),
                   const SizedBox(height: 12),
+
                   DropdownButtonFormField<String>(
                     initialValue: form.status,
                     decoration: const InputDecoration(labelText: "Status"),
@@ -213,33 +232,17 @@ class _CameraManagementScreenState
                 child: Stack(
                   children: [
                     // Try to load the stream if URL is available
-                    if (cam.effectiveStreamUrl != null &&
-                        !Camera.isVideoUrl(cam.effectiveStreamUrl))
+                    if (cam.effectiveStreamUrl != null)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          cam.effectiveStreamUrl!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 180,
-                          errorBuilder: (ctx, err, stack) =>
-                              const Center(
-                            child: Icon(Icons.videocam_off,
-                                size: 48, color: Colors.grey),
-                          ),
-                          loadingBuilder: (ctx, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2),
-                            );
-                          },
+                        child: CameraStreamWidget(
+                          streamUrl: cam.effectiveStreamUrl!,
+                          isOnline: cam.isOnline,
                         ),
                       )
                     else
                       const Center(
-                        child: Icon(Icons.videocam,
-                            size: 48, color: Colors.grey),
+                        child: Icon(Icons.videocam_off, size: 48, color: Colors.grey),
                       ),
 
                     // LIVE / OFFLINE badge
@@ -396,6 +399,25 @@ class _CameraManagementScreenState
                     ],
                   ),
                 ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await FilePicker.pickFiles(
+                      type: FileType.video,
+                    );
+                    if (result != null) {
+                      final success = await ref.read(camerasProvider.notifier).uploadTestVideo(result.files.first);
+                      if (mounted && success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Test Video Uploaded as Camera successfully!'), backgroundColor: AppColors.success),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.upload_file, size: 18, color: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                  label: const Text("Upload Video", style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _showAddDialog,
                   icon: const Icon(Icons.add, size: 18),
@@ -555,6 +577,73 @@ class _CameraManagementScreenState
                       ),
                     ),
                   ),
+
+                  // Live AI Violence Telemetry Bar
+                  if (cam.isAiEnabled && !cam.isEntrance && cam.isOnline)
+                    Positioned(
+                      bottom: 10,
+                      left: 10,
+                      right: 10,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "AI RISK LEVEL",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                  shadows: [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(0, 1))],
+                                ),
+                              ),
+                              Text(
+                                "${((cam.currentViolenceScore ?? 0) * 100).round()}%",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                      ? Colors.redAccent 
+                                      : (cam.currentViolenceScore ?? 0) >= 0.40 ? Colors.orange : Colors.greenAccent,
+                                  shadows: const [Shadow(color: Colors.black87, blurRadius: 3, offset: Offset(0, 1))],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 4,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(50),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  height: 4,
+                                  width: MediaQuery.of(context).size.width * 
+                                        ((cam.currentViolenceScore ?? 0).clamp(0.0, 1.0)) * 0.4, // Approximation based on parent size
+                                  decoration: BoxDecoration(
+                                    color: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                      ? Colors.redAccent 
+                                      : (cam.currentViolenceScore ?? 0) >= 0.40 ? Colors.orange : Colors.greenAccent,
+                                    borderRadius: BorderRadius.circular(2),
+                                    boxShadow: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                      ? [const BoxShadow(color: Colors.redAccent, blurRadius: 8)] 
+                                      : [],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),

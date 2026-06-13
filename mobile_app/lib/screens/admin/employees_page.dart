@@ -123,6 +123,30 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
                     onChanged: (v) => form.phone = v,
                   ),
                   const SizedBox(height: 12),
+                  TextFormField(
+                    key: ValueKey('shift_${form.shiftStart}'),
+                    initialValue: form.shiftStart,
+                    decoration: const InputDecoration(
+                      labelText: "Check-in Time (Shift Start)",
+                      hintText: "HH:MM (e.g. 09:00)",
+                    ),
+                    readOnly: true,
+                    onTap: () async {
+                      final time = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay(
+                          hour: int.parse(form.shiftStart.split(':')[0]),
+                          minute: int.parse(form.shiftStart.split(':')[1]),
+                        ),
+                      );
+                      if (time != null) {
+                        final formatted = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                        form.shiftStart = formatted;
+                        setDialogState(() {});
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: form.status,
                     decoration: const InputDecoration(labelText: "Status *"),
@@ -137,7 +161,7 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(12),
+                      border: Border.all(color: isDark ? Colors.grey.shade800 : Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -221,36 +245,33 @@ class _EmployeesPageScreenState extends ConsumerState<EmployeesPageScreen> {
   }
 
   Widget _buildPhotoPicker({required String label, required XFile? file, required Function(XFile?) onPicked}) {
-    return InkWell(
-      onTap: () async {
-        final picker = ImagePicker();
-        final picked = await picker.pickImage(source: ImageSource.gallery);
-        if (picked != null) {
-          onPicked(picked);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withAlpha(80)),
-          borderRadius: BorderRadius.circular(8),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: file != null 
+              ? AppColors.success.withOpacity(0.1) 
+              : (isDark ? Colors.grey.shade900 : Colors.grey.shade100),
+          side: BorderSide(
+            color: file != null ? AppColors.success : (isDark ? Colors.grey.shade700 : Colors.grey.shade300)
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.image, size: 20, color: file != null ? AppColors.primary : Colors.grey),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                file != null ? file.name : "Choose Image",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: file != null ? null : Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
+        onPressed: () async {
+          final picker = ImagePicker();
+          final picked = await picker.pickImage(source: ImageSource.gallery);
+          if (picked != null) {
+            onPicked(picked);
+          }
+        },
+        child: Text(
+          file != null ? file.name : "Choose Image",
+          style: TextStyle(
+            color: file != null ? AppColors.success : (isDark ? Colors.grey.shade300 : Colors.grey.shade800),
+            fontWeight: file != null ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );

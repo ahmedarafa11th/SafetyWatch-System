@@ -130,6 +130,7 @@ class AuthNotifier extends Notifier<AuthState> {
       await _storage.saveToken(token);
       await _storage.saveUserRole(user.role);
       await _storage.saveUserData(jsonEncode(user.toJson()));
+      await _storage.saveCredentials(email.trim().toLowerCase(), password);
 
       state = AuthState(user: user, isInitialized: true);
 

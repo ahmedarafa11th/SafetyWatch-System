@@ -152,8 +152,35 @@ class DioClient {
         onResponse: (response, handler) {
           return handler.next(response);
         },
-        onError: (DioException e, handler) {
-          // You could handle 401 Unauthorized here (e.g., refresh token or logout)
+        onError: (DioException e, handler) async {
+          if (e.response?.statusCode == 401) {
+            // Attempt silent token refresh
+            final credentials = await _secureStorage.getCredentials();
+            if (credentials != null) {
+              try {
+                // Avoid using _dio here directly to prevent infinite interceptor loops
+                final dioForRefresh = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+                final refreshResponse = await dioForRefresh.post(
+                  ApiConstants.login,
+                  data: {'email': credentials['email'], 'password': credentials['password']},
+                );
+                
+                if (refreshResponse.statusCode == 200) {
+                  final newToken = refreshResponse.data['data']['token'];
+                  await _secureStorage.saveToken(newToken);
+                  
+                  // Retry original request
+                  final opts = e.requestOptions;
+                  opts.headers['Authorization'] = 'Bearer $newToken';
+                  
+                  final cloneReq = await _dio.fetch(opts);
+                  return handler.resolve(cloneReq);
+                }
+              } catch (_) {
+                // Refresh failed, let the error pass so UI logs out
+              }
+            }
+          }
           return handler.next(e);
         },
       ),

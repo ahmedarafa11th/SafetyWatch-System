@@ -45,7 +45,7 @@ class Alert {
       description: json['description'] as String?,
       severity: json['severity'] as String? ?? 'medium',
       status: json['status'] as String? ?? 'active',
-      confidence: json['confidence'] as int?,
+      confidence: json['confidence'] != null ? double.tryParse(json['confidence'].toString())?.toInt() : null,
       cameraName: json['camera'] != null
           ? json['camera']['name'] as String?
           : json['camera_name'] as String?,
@@ -75,7 +75,7 @@ class AlertStats {
       critical: json['critical'] as int? ?? 0,
       unread: json['unread'] as int? ?? 0,
       resolvedToday: json['resolved_today'] as int? ?? 0,
-      avgConfidence: json['avg_confidence'] as int? ?? 0,
+      avgConfidence: json['avg_confidence'] != null ? double.tryParse(json['avg_confidence'].toString())?.toInt() ?? 0 : 0,
     );
   }
 }

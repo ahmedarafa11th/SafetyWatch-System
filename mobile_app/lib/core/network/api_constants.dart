@@ -1,6 +1,6 @@
 class ApiConstants {
   // Default base URL — override at app startup via setBaseUrl()
-  static String _baseUrl = 'https://141.144.238.112.nip.io';
+  static String _baseUrl = 'https://16.16.124.125.nip.io';
 
   static String get baseUrl => _baseUrl;
 

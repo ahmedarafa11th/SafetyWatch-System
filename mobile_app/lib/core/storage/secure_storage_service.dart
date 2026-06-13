@@ -42,6 +42,20 @@ class SecureStorageService {
     return await _storage.read(key: _userDataKey);
   }
 
+  Future<void> saveCredentials(String email, String password) async {
+    await _storage.write(key: 'auth_email', value: email);
+    await _storage.write(key: 'auth_password', value: password);
+  }
+
+  Future<Map<String, String>?> getCredentials() async {
+    final email = await _storage.read(key: 'auth_email');
+    final password = await _storage.read(key: 'auth_password');
+    if (email != null && password != null) {
+      return {'email': email, 'password': password};
+    }
+    return null;
+  }
+
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }

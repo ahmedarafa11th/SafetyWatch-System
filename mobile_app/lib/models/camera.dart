@@ -1,3 +1,6 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
+
 class Camera {
   final int id;
   final String name;
@@ -6,8 +9,13 @@ class Camera {
   final String? streamUrl;
   final String status; // 'online', 'offline'
   final int totalAlerts;
+
+
   final String? lastActiveAt;
   final String? createdAt;
+  final double? currentViolenceScore;
+  final bool isAiEnabled;
+  final bool isEntrance;
 
   const Camera({
     required this.id,
@@ -19,6 +27,9 @@ class Camera {
     this.totalAlerts = 0,
     this.lastActiveAt,
     this.createdAt,
+    this.currentViolenceScore,
+    this.isAiEnabled = false,
+    this.isEntrance = false,
   });
 
   bool get isOnline => status == 'online';
@@ -86,6 +97,11 @@ class Camera {
       totalAlerts: json['total_alerts'] as int? ?? 0,
       lastActiveAt: json['last_active_at'] as String?,
       createdAt: json['created_at'] as String?,
+      currentViolenceScore: json['current_violence_score'] != null 
+          ? double.tryParse(json['current_violence_score'].toString()) 
+          : null,
+      isAiEnabled: json['is_ai_enabled'] == 1 || json['is_ai_enabled'] == true,
+      isEntrance: json['is_entrance'] == 1 || json['is_entrance'] == true,
     );
   }
 }
@@ -113,17 +129,21 @@ class CameraStats {
   }
 }
 
+
+
 class CameraFormData {
   String name;
   String location;
   String ipAddress;
   String status;
+  PlatformFile? dummyVideoFile;
 
   CameraFormData({
     this.name = '',
     this.location = '',
     this.ipAddress = '',
     this.status = 'online',
+    this.dummyVideoFile,
   });
 
   Map<String, dynamic> toJson() {
@@ -135,6 +155,30 @@ class CameraFormData {
       'stream_url': streamUrl,
       'status': status,
     };
+  }
+
+  Future<FormData> toFormData() async {
+    final streamUrl = ipAddress.isNotEmpty ? Camera.buildStreamUrl(ipAddress) : null;
+    
+    final Map<String, dynamic> data = {
+      'name': name,
+      'location': location,
+      'status': status,
+    };
+    
+    if (ipAddress.isNotEmpty) {
+      data['ip_address'] = ipAddress;
+      if (streamUrl != null) data['stream_url'] = streamUrl;
+    }
+    
+    if (dummyVideoFile != null && dummyVideoFile!.path != null) {
+      data['video'] = await MultipartFile.fromFile(
+        dummyVideoFile!.path!,
+        filename: dummyVideoFile!.name,
+      );
+    }
+    
+    return FormData.fromMap(data);
   }
 
   factory CameraFormData.fromCamera(Camera cam) {
