@@ -208,9 +208,9 @@ class DioClient {
     }
   }
 
-  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
     try {
-      return await _dio.post(path, data: data, queryParameters: queryParameters);
+      return await _dio.post(path, data: data, queryParameters: queryParameters, options: options);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

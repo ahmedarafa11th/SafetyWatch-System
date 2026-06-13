@@ -280,6 +280,71 @@ class _CameraManagementScreenState
                         ),
                       ),
                     ),
+
+                    // Live AI Violence Telemetry Bar
+                    if (cam.isAiEnabled && !cam.isEntrance && cam.isOnline)
+                      Positioned(
+                        bottom: 10,
+                        left: 10,
+                        right: 10,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "AI RISK LEVEL",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                Text(
+                                  "${((cam.currentViolenceScore ?? 0) * 100).toStringAsFixed(0)}%",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              height: 4,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(50),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      height: 4,
+                                      width: constraints.maxWidth * ((cam.currentViolenceScore ?? 0).clamp(0.0, 1.0)),
+                                      decoration: BoxDecoration(
+                                        color: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                          ? Colors.redAccent 
+                                          : (cam.currentViolenceScore ?? 0) >= 0.40 ? Colors.orange : Colors.greenAccent,
+                                        borderRadius: BorderRadius.circular(2),
+                                        boxShadow: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                          ? [const BoxShadow(color: Colors.redAccent, blurRadius: 8)] 
+                                          : [],
+                                      ),
+                                    );
+                                  }
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -406,10 +471,17 @@ class _CameraManagementScreenState
                     );
                     if (result != null) {
                       final success = await ref.read(camerasProvider.notifier).uploadTestVideo(result.files.first);
-                      if (mounted && success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Test Video Uploaded as Camera successfully!'), backgroundColor: AppColors.success),
-                        );
+                      if (mounted) {
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Test Video Uploaded as Camera successfully!'), backgroundColor: AppColors.success),
+                          );
+                        } else {
+                          final error = ref.read(camerasProvider).error ?? 'Upload failed';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(error), backgroundColor: AppColors.error),
+                          );
+                        }
                       }
                     }
                   },
@@ -520,25 +592,22 @@ class _CameraManagementScreenState
               child: Stack(
                 children: [
                   // Try to load stream
-                  if (cam.effectiveStreamUrl != null &&
-                      !Camera.isVideoUrl(cam.effectiveStreamUrl))
+                  if (cam.effectiveStreamUrl != null)
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(14)),
-                      child: Image.network(
-                        cam.effectiveStreamUrl!,
-                        fit: BoxFit.cover,
+                      child: SizedBox(
                         width: double.infinity,
                         height: 120,
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.videocam,
-                              size: 36, color: Colors.grey),
+                        child: CameraStreamWidget(
+                          streamUrl: cam.effectiveStreamUrl!,
+                          isOnline: cam.isOnline,
                         ),
                       ),
                     )
                   else
                     const Center(
-                      child: Icon(Icons.videocam,
+                      child: Icon(Icons.videocam_off,
                           size: 36, color: Colors.grey),
                     ),
 
@@ -621,24 +690,26 @@ class _CameraManagementScreenState
                               color: Colors.white.withAlpha(50),
                               borderRadius: BorderRadius.circular(2),
                             ),
-                            child: Row(
-                              children: [
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  height: 4,
-                                  width: MediaQuery.of(context).size.width * 
-                                        ((cam.currentViolenceScore ?? 0).clamp(0.0, 1.0)) * 0.4, // Approximation based on parent size
-                                  decoration: BoxDecoration(
-                                    color: (cam.currentViolenceScore ?? 0) >= 0.70 
-                                      ? Colors.redAccent 
-                                      : (cam.currentViolenceScore ?? 0) >= 0.40 ? Colors.orange : Colors.greenAccent,
-                                    borderRadius: BorderRadius.circular(2),
-                                    boxShadow: (cam.currentViolenceScore ?? 0) >= 0.70 
-                                      ? [const BoxShadow(color: Colors.redAccent, blurRadius: 8)] 
-                                      : [],
-                                  ),
-                                ),
-                              ],
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    height: 4,
+                                    width: constraints.maxWidth * ((cam.currentViolenceScore ?? 0).clamp(0.0, 1.0)),
+                                    decoration: BoxDecoration(
+                                      color: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                        ? Colors.redAccent 
+                                        : (cam.currentViolenceScore ?? 0) >= 0.40 ? Colors.orange : Colors.greenAccent,
+                                      borderRadius: BorderRadius.circular(2),
+                                      boxShadow: (cam.currentViolenceScore ?? 0) >= 0.70 
+                                        ? [const BoxShadow(color: Colors.redAccent, blurRadius: 8)] 
+                                        : [],
+                                    ),
+                                  );
+                                }
+                              ),
                             ),
                           ),
                         ],
