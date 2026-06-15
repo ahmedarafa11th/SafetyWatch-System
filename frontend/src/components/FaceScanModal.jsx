@@ -71,8 +71,8 @@ export default function FaceScanModal({ isOpen, actionType, onClose, onLogSucces
           stopCamera(); // Stop scanning once recognized
           
           // 2. Log Attendance via Laravel API
-          // Fetch token from localStorage using the correct key
-          const token = localStorage.getItem('sw_token') || '';
+          // Fetch token from sessionStorage or localStorage
+          const token = sessionStorage.getItem('sw_token') || localStorage.getItem('sw_token') || '';
           
           const logRes = await fetch(`${import.meta.env.VITE_API_URL}/admin/attendance/log-via-face`, {
             method: 'POST',
