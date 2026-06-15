@@ -152,7 +152,7 @@ class AttendanceController extends Controller
                     'check_out_source' => 'face_recognition',
                     'total_hours'      => $this->calcHours($attendance->check_in, $time, $date),
                 ]);
-                return $this->success($attendance, "{$employee->user->name} Checked OUT via Face Recognition");
+                return $this->success($attendance, "Goodbye {$employee->user->name}, have a safe rest of your day!");
             }
             return $this->success($attendance, 'Face recognized (Cooldown active)');
         }
