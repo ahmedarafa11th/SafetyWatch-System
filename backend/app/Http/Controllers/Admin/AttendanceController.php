@@ -99,6 +99,12 @@ class AttendanceController extends Controller
         ]);
 
         $employee = Employee::where('employee_code', $request->employee_code)->first();
+        if (!$employee) {
+            return response()->json([
+                'status' => false, 
+                'message' => 'The recognized employee could not be found or belongs to another organization.'
+            ], 404);
+        }
         $date = now()->format('Y-m-d');
         $time = now()->format('H:i');
         $action = $request->action; // 'check_in' or 'check_out'
