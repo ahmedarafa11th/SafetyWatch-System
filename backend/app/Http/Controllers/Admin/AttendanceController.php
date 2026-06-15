@@ -94,7 +94,7 @@ class AttendanceController extends Controller
     public function logViaFace(Request $request)
     {
         $request->validate([
-            'employee_code' => 'required|exists:employees,employee_code',
+            'employee_code' => 'required|string',
             'action'        => 'nullable|in:check_in,check_out'
         ]);
 
