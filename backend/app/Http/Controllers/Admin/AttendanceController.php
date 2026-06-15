@@ -141,6 +141,10 @@ class AttendanceController extends Controller
                 return $this->success(null, 'Cannot check out without checking in first!');
             }
 
+            if ($attendance->check_out) {
+                return $this->success($attendance, "You've already completed your duty for today. Great job and have a safe rest of your day!");
+            }
+
             $checkInTime = \Carbon\Carbon::parse("$date " . $attendance->check_in);
             if (now()->diffInMinutes($checkInTime) > 5) {
                 $attendance->update([
