@@ -174,6 +174,38 @@ async def recognize_face(file: UploadFile = File(...)):
             "similarity": similarity_score
         }
 
+@app.delete("/api/embeddings/{employee_code}")
+def delete_embeddings(employee_code: str):
+    """
+    Remove all face embeddings associated with a specific employee_code.
+    """
+    global known_embeddings, known_names
+    
+    if not known_names:
+        return {"status": "success", "message": "No embeddings to delete."}
+        
+    indices_to_keep = []
+    removed_count = 0
+    
+    for i, name in enumerate(known_names):
+        # name is stored as "EMP-001_John", so we check if it starts with "EMP-001_"
+        # or if it exactly matches the code
+        if name.startswith(f"{employee_code}_") or name == employee_code:
+            removed_count += 1
+        else:
+            indices_to_keep.append(i)
+            
+    if removed_count == 0:
+        return {"status": "success", "message": f"No embeddings found for {employee_code}."}
+        
+    # Rebuild the lists with only the kept indices
+    known_embeddings = [known_embeddings[i] for i in indices_to_keep]
+    known_names = [known_names[i] for i in indices_to_keep]
+    
+    save_embeddings()
+    
+    return {"status": "success", "message": f"Removed {removed_count} embeddings for {employee_code}."}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

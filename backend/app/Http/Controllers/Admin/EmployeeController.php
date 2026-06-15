@@ -211,6 +211,17 @@ class EmployeeController extends Controller
     {
         $user = $employee->user;
 
+        // Remove the employee's face embeddings from the AI service
+        $aiUrl = env('FACE_RECOGNITION_API_URL');
+        if ($aiUrl) {
+            try {
+                $deleteUrl = rtrim($aiUrl, '/') . '/api/embeddings/' . $employee->employee_code;
+                Http::timeout(5)->delete($deleteUrl);
+            } catch (\Exception $apiException) {
+                Log::error("Failed to delete face embeddings from AI API: " . $apiException->getMessage());
+            }
+        }
+
         // Only soft-delete the employee profile, NOT the user account.
         // Deleting the user makes it impossible to login or re-register.
         // Instead, deactivate the user so the admin can re-add them later.
