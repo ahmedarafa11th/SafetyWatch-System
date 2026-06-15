@@ -88,14 +88,15 @@ export default function FaceScanModal({ isOpen, actionType, onClose, onLogSucces
           });
           
           const logData = await logRes.json();
-          if (logData.status) {
+          if (logRes.ok && logData.status) {
             setStatus(logData.message);
             setTimeout(() => {
               onLogSuccess(logData.message);
               onClose();
             }, 2000);
           } else {
-            setStatus("Failed to log attendance in database.");
+            const backendError = logData.message || (logData.errors && logData.errors.employee_code && logData.errors.employee_code[0]) || "Failed to log attendance in database.";
+            setStatus(backendError);
             // Resume scanning after 3s
             setTimeout(() => {
                 setStatus("Scanning face...");

@@ -97,3 +97,4 @@ safetywatch*-firebase-*.json
 **/google-services.json
 *.apk
 AWS Key Pair/
+SSH KEY/

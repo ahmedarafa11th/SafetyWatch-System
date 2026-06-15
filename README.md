@@ -133,3 +133,9 @@ This project was developed as a comprehensive graduation project for academic pu
 - **Karim Tarek**
 - **Ahmed Kamal**
 - **Ahmed Hossam**
+- **Manar Alaa**
+
+### Project Supervisors
+We would like to extend our special thanks to our supervisors for their invaluable guidance throughout this project:
+- **Dr. Samar Hesham**
+- **Eng. Sara Hamdy**
