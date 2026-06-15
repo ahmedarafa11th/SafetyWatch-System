@@ -132,7 +132,7 @@ class AttendanceController extends Controller
                 'notes'            => 'Auto-logged via Face Recognition'
             ]);
 
-            return $this->success($attendance, "{$employee->user->name} Checked IN via Face Recognition");
+            return $this->success($attendance, "Welcome {$employee->user->name}!");
         }
 
         // Handle explicitly requested Check Out
