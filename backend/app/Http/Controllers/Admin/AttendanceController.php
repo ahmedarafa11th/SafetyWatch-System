@@ -109,7 +109,7 @@ class AttendanceController extends Controller
         $time = now()->format('H:i');
         $action = $request->action; // 'check_in' or 'check_out'
 
-        $attendance = Attendance::where('employee_id', $employee->id)->where('date', $date)->first();
+        $attendance = Attendance::where('employee_id', $employee->id)->whereDate('date', $date)->first();
 
         // Handle explicitly requested Check In
         if ($action === 'check_in' || (!$action && !$attendance)) {
