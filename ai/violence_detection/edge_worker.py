@@ -51,36 +51,50 @@ def login_to_backend(api_url, email, password):
         return None, str(e)
 
 def load_or_prompt_config():
+    # 1. Check environment variables first (set by docker-compose)
+    env_url   = os.environ.get("LARAVEL_API_URL", "").rstrip("/")
+    env_token = os.environ.get("LARAVEL_API_TOKEN", "")
+
+    if env_url and env_token:
+        print(f"✅ Configuration loaded from environment variables.")
+        return {
+            "LARAVEL_API_URL": env_url,
+            "API_TOKEN": env_token,
+            "THRESHOLD": 0.70
+        }
+
+    # 2. Fall back to saved config file
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
             config = json.load(f)
             print(f"✅ Configuration loaded from {CONFIG_FILE}")
             return config
-            
+
+    # 3. Interactive first-time setup
     print("\n" + "="*50)
     print("🚀 SafetyWatch Edge Node - First Time Setup")
     print("="*50)
     print("Enter your SafetyWatch admin credentials below.\n")
-    
-    api_url = input("Server Address (e.g. https://141.144.238.112.nip.io): ").strip().rstrip("/")
+
+    api_url = input("Server Address (Press Enter for https://3.124.186.191.nip.io): ").strip().rstrip("/")
     if not api_url:
-        api_url = "http://localhost:8000"
-    
+        api_url = "https://3.124.186.191.nip.io"
+
     # Login loop - keep asking until credentials are correct
     while True:
         email = input("Admin Email: ").strip()
         password = input("Password: ").strip()
-        
+
         print("\n🔄 Logging in...")
         token, error = login_to_backend(api_url, email, password)
-        
+
         if token:
             print("✅ Login successful!")
             break
         else:
             print(f"❌ {error}")
             print("Please try again.\n")
-    
+
     config = {
         "LARAVEL_API_URL": api_url,
         "API_TOKEN": token,
@@ -88,10 +102,10 @@ def load_or_prompt_config():
         "password": password,
         "THRESHOLD": 0.70
     }
-    
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
-        
+
     print("✅ Configuration saved! You won't need to enter this again.\n")
     return config
 
