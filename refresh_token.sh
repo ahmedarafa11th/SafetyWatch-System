@@ -30,7 +30,7 @@ fi
 echo "✅ Got new token: ${TOKEN:0:20}..."
 
 # Update docker-compose.yml with the new token
-sed -i.bak "s|LARAVEL_API_TOKEN:-[^}]*}|LARAVEL_API_TOKEN:-$TOKEN}|g" "$COMPOSE_FILE"
+sed -i.bak "s@LARAVEL_API_TOKEN:-[^}]*}@LARAVEL_API_TOKEN:-$TOKEN}@g" "$COMPOSE_FILE"
 
 echo "✅ docker-compose.yml updated with fresh token."
 echo ""

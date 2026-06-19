@@ -14,7 +14,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - LARAVEL_API_URL=${LARAVEL_API_URL:-https://3.124.186.191.nip.io}
-      - LARAVEL_API_TOKEN=${LARAVEL_API_TOKEN:-120|5KEPWG0M5jCgkK8kr8kcMyi0l896vv1gXEGDChTo6baa0b50}
+      - LARAVEL_API_TOKEN=${LARAVEL_API_TOKEN:-122|kZKwBHXdzoQ488tNthditcLDUhZYLrRWq6OTeIsA32881dc4}
       - CAMERA_API_KEY=${CAMERA_API_KEY:-secret}
     deploy:
       resources:
