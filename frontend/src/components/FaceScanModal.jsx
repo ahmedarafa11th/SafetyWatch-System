@@ -59,7 +59,8 @@ export default function FaceScanModal({ isOpen, actionType, onClose, onLogSucces
 
       try {
         // 1. Recognize Face via Python API
-        const recognizeRes = await fetch('http://localhost:8000/api/recognize', {
+        const faceApiUrl = import.meta.env.VITE_FACE_API_URL || 'http://localhost:8000';
+        const recognizeRes = await fetch(`${faceApiUrl}/api/recognize`, {
           method: 'POST',
           body: formData
         });

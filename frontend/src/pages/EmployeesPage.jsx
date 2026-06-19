@@ -147,7 +147,8 @@ export default function EmployeesPage() {
           if (formData.photo_left) aiPayload.append('photo_left', formData.photo_left);
           if (formData.photo_right) aiPayload.append('photo_right', formData.photo_right);
           
-          await fetch('http://localhost:8000/api/register', {
+          const faceApiUrl = import.meta.env.VITE_FACE_API_URL || 'http://localhost:8000';
+          await fetch(`${faceApiUrl}/api/register`, {
             method: 'POST',
             body: aiPayload
           });
