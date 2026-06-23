@@ -228,6 +228,7 @@ This project was developed as a comprehensive graduation project for the Faculty
 - **Mohamed Bahaa**
 - **Karim Tarek**
 - **Ahmed Kamal**
+- **Manar Alaa**
 - **Ahmed Hossam**
 
 ### Project Supervisors
