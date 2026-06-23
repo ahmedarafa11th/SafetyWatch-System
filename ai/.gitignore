@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# Environment
+.env
+edge_config.json
+
+# Data & Models (too large for git)
+face_recognition/embeddings.pkl
+face_recognition/results.csv
+face_recognition/data/
+face_recognition/lfw-funneled.tgz/
+face_recognition/*.tgz
+violence_detection/checkpoints/*.h5
+violence_detection/checkpoints/*.hdf5
+violence_detection/checkpoints/*.keras
+
+# Media files
+**/*.mp4
+**/*.avi
+**/*.jpg
+**/*.png
+
+# Docker
+docker-compose.yml
+docker-compose.yml.bak

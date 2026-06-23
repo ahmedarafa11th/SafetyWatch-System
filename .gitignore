@@ -4,18 +4,34 @@
 # AI / Data Science
 # ----------------------------------------------------------------------
 **/__pycache__/
+*.pyc
+
+# Violence Detection
 ai/violence_detection/checkpoints/*.h5
 ai/violence_detection/checkpoints/*.hdf5
-ai/violence_detection/*.pyc
+ai/violence_detection/checkpoints/*.keras
 ai/violence_detection/.env
-ai/face_recognition/*.pyc
+
+# Face Recognition
 ai/face_recognition/.env
 ai/face_recognition/*.tgz
+ai/face_recognition/lfw-funneled.tgz/
 ai/face_recognition/data/
+ai/face_recognition/embeddings.pkl
+ai/face_recognition/results.csv
+
+# AI media files
 ai/**/*.mp4
 ai/**/*.avi
 ai/**/*.jpg
 ai/**/*.png
+
+# Docker compose backup & secrets
+ai/docker-compose.yml.bak
+ai/docker-compose.yml
+
+# Edge config (generated at runtime)
+**/edge_config.json
 
 # ----------------------------------------------------------------------
 # Backend (Laravel PHP)
@@ -30,6 +46,9 @@ backend/storage/framework/cache/
 backend/storage/framework/sessions/
 backend/storage/framework/views/
 backend/storage/logs/
+backend/storage/app/public/faces/
+backend/storage/app/public/test_videos/
+backend/database/*.sqlite
 backend/.env
 backend/.env.backup
 backend/.env.production
@@ -44,7 +63,7 @@ backend/.idea
 backend/.vscode
 
 # ----------------------------------------------------------------------
-# Frontend (React / Vue / npm)
+# Frontend (React / Vite)
 # ----------------------------------------------------------------------
 frontend/node_modules/
 frontend/dist/
@@ -54,6 +73,7 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+frontend/.env.production
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
@@ -61,20 +81,26 @@ frontend/.eslintcache
 frontend/.vscode/
 
 # ----------------------------------------------------------------------
-# Mobile App (Flutter / React Native)
+# Mobile App (Flutter)
 # ----------------------------------------------------------------------
 mobile_app/node_modules/
 mobile_app/build/
 mobile_app/.dart_tool/
 mobile_app/.pub-cache/
 mobile_app/.pub/
+mobile_app/.flutter-plugins-dependencies
+mobile_app/.metadata
 mobile_app/android/.gradle/
 mobile_app/android/app/build/
+mobile_app/android/app/google-services.json
 mobile_app/ios/Pods/
 mobile_app/ios/.symlinks/
 mobile_app/ios/Flutter/Flutter.podspec
 mobile_app/.env
 mobile_app/.vscode/
+mobile_app/.idea/
+mobile_app/implementation_plan.md
+mobile_app/*.iml
 
 # ----------------------------------------------------------------------
 # OS / IDE generated files
@@ -91,10 +117,21 @@ Thumbs.db
 .vscode/
 *.rar
 
-# Secrets & Artifacts
+# ----------------------------------------------------------------------
+# Secrets & Credentials
+# ----------------------------------------------------------------------
 safetywatch*-firebase-*.json
 **/firebase-credentials.json
 **/google-services.json
 *.apk
 AWS Key Pair/
 SSH KEY/
+refresh_token.sh
+
+# ----------------------------------------------------------------------
+# Temporary / Backup files
+# ----------------------------------------------------------------------
+*.tar.gz
+*.bak
+backend_backup_local/
+backend_from_aws.tar.gz
