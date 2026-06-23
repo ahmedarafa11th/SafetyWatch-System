@@ -1,139 +1,233 @@
-# SafetyWatch 🛡️
+<p align="center">
+  <img src="frontend/src/assets/logo_v2.png" alt="SafetyWatch Logo" width="120" />
+</p>
 
-**Transforming ordinary CCTV cameras into intelligent, proactive security guards.** 
+<h1 align="center">SafetyWatch</h1>
 
-SafetyWatch is an enterprise-grade AI surveillance platform designed to safeguard environments in real-time. By seamlessly integrating state-of-the-art deep learning models for immediate violence detection and highly accurate facial recognition, the platform instantly analyzes IP camera streams to identify physical altercations and recognize personnel. The moment a critical incident occurs, SafetyWatch eliminates human response delays by dispatching instant mobile push notifications directly to security teams, while simultaneously broadcasting live incident alerts to a centralized, cloud-hosted admin dashboard.
+<p align="center">
+  <strong>Turning passive cameras into proactive, AI-powered security systems.</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/AI-TensorFlow%20%7C%20PyTorch-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/Backend-Laravel%2010-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" />
+  <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Mobile-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
+  <img src="https://img.shields.io/badge/Cloud-AWS%20EC2-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" />
+</p>
 
 ---
 
-## 🏗️ System Architecture Pipeline
+## 📌 What is SafetyWatch?
+
+SafetyWatch is a full-stack AI surveillance platform that transforms ordinary CCTV cameras into intelligent security agents. It **detects violence in real-time**, **recognizes employees automatically**, and **sends instant push notifications** to security teams — all within seconds.
+
+> Traditional cameras just **record** incidents. SafetyWatch **prevents** them.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
 graph LR
-    A[IP Camera Streams] -->|Video Frames| B(Local AI Microservices)
-    B -->|Face Recognition| C{Detection Engine}
-    B -->|Violence Detection| C
-    C -->|Webhook Alerts| D[(AWS EC2 Backend)]
-    D -->|Websockets/Polling| E[Cloudflare React Dashboard]
-    D -->|Firebase FCM| F[Flutter Mobile App]
+    A["🎥 IP Cameras"] -->|RTSP Stream| B["🤖 Local AI Edge Node<br/>(GPU Server)"]
+    B -->|Violence Detected| C["☁️ AWS EC2 Backend<br/>(Laravel API)"]
+    B -->|Face Recognized| C
+    C -->|WebSocket + REST| D["💻 React Dashboard<br/>(Cloudflare Pages)"]
+    C -->|Firebase FCM| E["📱 Flutter Mobile App"]
 ```
 
-SafetyWatch is designed with a distributed architecture:
-- **AI Models:** Run completely **locally** to ensure minimal latency, data privacy, and efficient processing of high-bandwidth video streams.
-- **Backend API:** Hosted on an **AWS EC2** instance, acting as the central nervous system to store alerts, dispatch push notifications, and serve data to the clients.
-- **Web Dashboard:** Hosted on **Cloudflare Pages** for lightning-fast global access.
+The system is built on a **distributed architecture** optimized for speed and privacy:
+
+| Layer | Where It Runs | Why |
+|:------|:-------------|:----|
+| **AI Models** | Locally on a GPU machine | Zero latency, full data privacy, no cloud dependency |
+| **Backend API** | AWS EC2 (Ubuntu) | Central hub for alerts, auth, employee data, and push notifications |
+| **Web Dashboard** | Cloudflare Pages | Lightning-fast global access for admins |
+| **Mobile App** | Android / iOS | On-the-go monitoring with instant push alerts |
 
 ---
 
-## ✨ Key Features & AI Models
+## 🔥 Core Features
 
 ### 🔴 Real-Time Violence Detection
-Detects altercations or physical violence in CCTV feeds in real-time.
-- **Architecture:** Hybrid CNN-RNN combining **VGG16**, **Bidirectional ConvLSTM2D**, and **LSTM**.
-- **Attention Mechanism:** Implements **CBAM** (Convolutional Block Attention Module) to focus on the most discriminative spatial regions and feature channels.
-- **Intelligent Motion Cropping:** An optical-flow-based algorithm detects the 5-second window with the highest motion intensity to crop the action.
-- **Performance:** 88.83% Accuracy and 94.97% ROC-AUC. Trained using Categorical Focal Loss on the unified VDD Dataset (UBI-FIGHTS, SCVD, and RWF-2000).
+
+Detects physical altercations in CCTV feeds and sends instant alerts.
+
+| Component | Details |
+|:----------|:--------|
+| **Architecture** | Hybrid CNN-RNN: `VGG16` → `Bidirectional ConvLSTM2D` → `LSTM` |
+| **Attention** | CBAM (Convolutional Block Attention Module) — focuses on fight regions, ignores background |
+| **Smart Cropping** | Optical-flow algorithm auto-crops the 5-second window with highest motion intensity |
+| **Accuracy** | **88.83%** Accuracy · **94.97%** ROC-AUC |
+| **Dataset** | VDD (UBI-FIGHTS + SCVD + RWF-2000) |
+| **Loss Function** | Categorical Focal Loss (handles class imbalance) |
 
 ### 👤 Employee Facial Recognition
-Automated identification of employees in the camera's field of view.
-- **Face Detection:** Leverages **MTCNN** (Multi-task Cascaded Convolutional Networks) for robust bounding box detection and face alignment.
-- **Feature Extraction:** Uses **InceptionResnetV1** (pretrained on `vggface2` via `facenet_pytorch`) to generate highly distinct 512-dimensional facial embeddings.
-- **Matching:** Calculates Cosine Similarity between live embeddings and the registered database, utilizing dynamic visual thresholds (Green/Yellow/Red) based on confidence scores.
 
-### 💻 Admin Web Dashboard (React + Vite)
-A sleek, responsive application hosted on Cloudflare Pages for adding new cameras, managing employee records, and monitoring live AI alerts as they happen.
+Automated attendance tracking — employees are identified the moment they walk past a camera.
 
-### 📱 Mobile Companion App (Flutter)
-A fully-featured Flutter application for Android and iOS, providing on-the-go access to camera feeds and delivering instant **Push Notifications** when violence is detected using Firebase Cloud Messaging (FCM).
+| Component | Details |
+|:----------|:--------|
+| **Face Detection** | MTCNN (Multi-task Cascaded Convolutional Networks) |
+| **Feature Extraction** | InceptionResnetV1 (pretrained on VGGFace2 via `facenet_pytorch`) |
+| **Matching** | Cosine Similarity with dynamic confidence thresholds (Green / Yellow / Red) |
+| **Embedding Size** | 512-dimensional facial embeddings |
+
+### 💻 Admin Web Dashboard
+
+A sleek, responsive React + Vite application deployed on Cloudflare Pages.
+
+- Manage employees (add, edit, delete, upload face photos)
+- Add and configure IP cameras
+- Monitor live AI alerts and incident logs in real-time
+- View attendance records with filtering and export
+
+### 📱 Mobile Companion App
+
+A fully-featured Flutter app for Android & iOS.
+
+- Receive **instant push notifications** when violence is detected (Firebase FCM)
+- View live alerts and incident history on-the-go
+- Manage employee data from anywhere
+- Robust token management for 100% reliable notification delivery
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
-| Domain | Technologies Used |
-| :--- | :--- |
-| **AI & Vision** | Python, TensorFlow, PyTorch, OpenCV, facenet_pytorch, MTCNN, FastAPI, Scikit-learn |
-| **Backend API** | PHP, Laravel 10, SQLite / MySQL, Composer, AWS EC2, Firebase SDK (kreait) |
-| **Web Frontend** | React.js, Vite, React Router, Cloudflare Pages |
-| **Mobile App** | Flutter, Dart, Firebase Cloud Messaging (FCM) |
+| Domain | Technologies |
+|:-------|:-------------|
+| **AI & Computer Vision** | Python · TensorFlow · PyTorch · OpenCV · MTCNN · facenet_pytorch · FastAPI · Scikit-learn |
+| **Backend API** | PHP · Laravel 10 · SQLite · Sanctum Auth · Firebase Admin SDK (kreait) |
+| **Web Frontend** | React.js · Vite · React Router · Axios · Cloudflare Pages |
+| **Mobile App** | Flutter · Dart · Firebase Cloud Messaging · Provider |
+| **Infrastructure** | AWS EC2 · Docker · Nginx · Cloudflare DNS |
+| **AI Deployment** | Docker Compose · NVIDIA GPU · CUDA · Edge Computing |
 
 ---
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
-```text
-SafetyWatch_System/
-├── ai/                 # Python AI scripts and microservice endpoints
-│   ├── face_recognition/     # MTCNN + InceptionResnetV1 service
-│   └── violence_detection/   # VGG16 + CBAM model APIs
-├── backend/            # Laravel REST API, Auth, and Webhooks
-├── frontend/           # React.js Web Dashboard source
-└── mobile_app/         # Flutter Mobile Application
+```
+SafetyWatch-System/
+│
+├── ai/                              # AI Microservices (runs locally on GPU)
+│   ├── face_recognition/            # MTCNN + InceptionResnetV1 service
+│   │   ├── api.py                   # FastAPI endpoints for face operations
+│   │   ├── edge_client.py           # Edge node client for camera polling
+│   │   └── src/                     # Core face recognition logic
+│   ├── violence_detection/          # VGG16 + CBAM violence detection
+│   │   ├── api.py                   # FastAPI endpoints for violence analysis
+│   │   ├── edge_worker.py           # Edge orchestrator (camera polling + detection)
+│   │   ├── models/                  # Model architecture (CBAM, losses)
+│   │   └── configs/                 # Model configuration
+│   └── docker-compose.yml.example   # Template for Docker deployment
+│
+├── backend/                         # Laravel 10 REST API (deployed on AWS EC2)
+│   ├── app/Http/Controllers/        # API controllers (Auth, Employee, Camera, AI)
+│   ├── routes/api.php               # API route definitions
+│   ├── database/migrations/         # Database schema
+│   └── Dockerfile                   # Production Docker build
+│
+├── frontend/                        # React + Vite Dashboard (Cloudflare Pages)
+│   ├── src/                         # React components, pages, and services
+│   └── public/                      # Static assets
+│
+├── mobile_app/                      # Flutter Mobile App (Android & iOS)
+│   ├── lib/                         # Dart source code
+│   └── android/                     # Android-specific configuration
+│
+└── deployment_scripts/              # Server setup & deployment automation
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to set up the system.
+### Prerequisites
 
-### 1. Backend Server (Laravel on AWS/Local)
-Navigate to the `backend` folder to set up the API.
+- **PHP 8.1+** & Composer
+- **Node.js 18+** & npm
+- **Flutter 3.x** & Dart
+- **Python 3.10+** with CUDA-capable GPU
+- **Docker** (optional, for containerized AI deployment)
+
+### 1. Backend (Laravel API)
+
 ```bash
 cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
 php artisan serve
 ```
-*Note: Ensure `firebase-credentials.json` is placed in `storage/app/` to enable mobile push notifications.*
+
+> **Note:** Place `firebase-credentials.json` in `storage/app/` to enable push notifications.
 
 ### 2. Web Dashboard (React)
-Navigate to the `frontend` folder. (For production, this is deployed to Cloudflare Pages).
+
 ```bash
 cd frontend
 npm install
+cp .env.example .env.local    # Configure your API URL
 npm run dev
 ```
 
 ### 3. Mobile App (Flutter)
-Navigate to the `mobile_app` folder.
+
 ```bash
 cd mobile_app
 flutter clean
 flutter pub get
 flutter run
 ```
-*Note: Ensure `google-services.json` is placed in `android/app/` to enable Firebase on Android devices.*
 
-### 4. Local AI Microservices
-The AI models must be run locally on a machine with a capable GPU.
-Navigate to the respective AI folders and install the Python dependencies:
+> **Note:** Place `google-services.json` in `android/app/` for Firebase on Android.
+
+### 4. AI Microservices (GPU Required)
+
 ```bash
-# Example for Violence Detection
-cd ai/violence_detection
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python demo_app.py
+cd ai
+cp docker-compose.yml.example docker-compose.yml
+# Edit docker-compose.yml with your API token and server URL
+docker-compose up --build
 ```
+
+Or run without Docker:
+```bash
+cd ai/violence_detection
+pip install -r requirements.txt
+python edge_worker.py
+```
+
+---
+
+## ⚙️ Environment Variables
+
+| File | Location | Purpose |
+|:-----|:---------|:--------|
+| `backend/.env` | `backend/` | Laravel app key, DB config, Sanctum domains, Firebase |
+| `frontend/.env.local` | `frontend/` | API URL for development |
+| `ai/docker-compose.yml` | `ai/` | API tokens, server URL, camera keys |
+
+All sensitive files are **gitignored**. Copy the `.example` templates and fill in your own credentials.
 
 ---
 
 ## 🎓 Graduation Project
 
-This project was developed as a comprehensive graduation project for academic purposes.
+This project was developed as a comprehensive graduation project for the Faculty of Computer Science.
 
 ### SafetyWatch Team
-- **Ahmed Arafa** (Me)
+- **Ahmed Arafa**
 - **Mahmoud Abdelaal**
 - **Monica Basem**
 - **Mohamed Bahaa**
 - **Karim Tarek**
 - **Ahmed Kamal**
 - **Ahmed Hossam**
-- **Manar Alaa**
 
 ### Project Supervisors
 We would like to extend our special thanks to our supervisors for their invaluable guidance throughout this project:
